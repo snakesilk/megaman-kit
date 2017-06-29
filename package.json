@@ -14,6 +14,7 @@
     "@snakesilk/xml-loader": "0.3.1"
   },
   "devDependencies": {
+    "@snakesilk/testing": "^0.2.0",
     "babel-cli": "^6.24.1",
     "babel-preset-es2015": "^6.24.1",
     "expect.js": "^0.3.1",
