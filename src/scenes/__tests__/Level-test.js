@@ -3,10 +3,11 @@ const sinon = require('sinon');
 
 const Mocks = require('@snakesilk/testing/mocks');
 
-const Game = require('../../Game');
-const Entity = require('../../Entity');
-const Health = require('../../traits/Health');
-const Teleport = require('../../traits/Teleport');
+const {
+  Game, Entity,
+  Traits: {Health, Teleport},
+} = require('@snakesilk/engine');
+
 const Level = require('../Level');
 
 describe('Level', function() {
