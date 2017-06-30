@@ -1,6 +1,6 @@
 {
   "name": "@snakesilk/megaman-kit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Kit for building Megaman games using SnakeSilk.",
   "license": "MIT",
   "main": "./dist/index.js",
