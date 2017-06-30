@@ -8,6 +8,12 @@
   dependencies:
     three "0.70"
 
+"@snakesilk/engine@0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@snakesilk/engine/-/engine-0.5.0.tgz#8a394d302083c0dc03d27158437e7d64d6c22e52"
+  dependencies:
+    three "0.70"
+
 "@snakesilk/testing@^0.2.0":
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/@snakesilk/testing/-/testing-0.2.0.tgz#c88307f7bb607d93901f07abbd8dc8bd76966230"
@@ -16,9 +22,9 @@
     sinon "^1.17.3"
     three "0.70"
 
-"@snakesilk/xml-loader@0.3.1":
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/@snakesilk/xml-loader/-/xml-loader-0.3.1.tgz#fc3d2da9666dd79c67e23ebd4bca591df606614f"
+"@snakesilk/xml-loader@0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@snakesilk/xml-loader/-/xml-loader-0.4.0.tgz#2896c144492cd57d34a7557dcfbf68a31bcd9357"
   dependencies:
     "@snakesilk/engine" "0.4.0"
     three "0.70"
