@@ -7,7 +7,7 @@
   "scripts": {
     "build": "babel ./src --out-dir ./dist",
     "test": "mocha './src/**/*-test.js'",
-    "watch": "npm run build -- --watch"
+    "watch": "yarn run build -- --watch"
   },
   "dependencies": {
     "@snakesilk/engine": "0.5.0",
