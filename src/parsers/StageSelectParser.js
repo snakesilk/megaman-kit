@@ -1,7 +1,16 @@
-const Util = require('@snakesilk/engine/dist/Util');
 const {Parser: {SceneParser}} = require('@snakesilk/xml-loader');
-
 const StageSelect = require('../scenes/StageSelect');
+
+function fill(x, n) {
+    let s = '';
+    for (;;) {
+        if (n & 1) s += x;
+        n >>= 1;
+        if (n) x += x;
+        else break;
+    }
+    return s;
+}
 
 class StageSelectParser extends SceneParser
 {
@@ -31,7 +40,7 @@ class StageSelectParser extends SceneParser
     _createCaption(text)
     {
         text = text.split(" ");
-        text[1] = Util.string.fill(" ", 6 - text[1].length) + text[1];
+        text[1] = fill(" ", 6 - text[1].length) + text[1];
         text = text.join("\n");
         return this.loader.resourceManager.get('font', 'nintendo')(text).createMesh();
     }
