@@ -4,7 +4,7 @@ const {createNode} = require('@snakesilk/testing/xml');
 const {Parser} = require('@snakesilk/xml-loader');
 const {Destructible} = require('@snakesilk/megaman-traits');
 
-const factory = require('../Destructible.js');
+const factory = require('..')['destructible'];
 
 describe('Destructible factory', function() {
   let parser;

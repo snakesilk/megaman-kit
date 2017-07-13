@@ -5,7 +5,7 @@ const {createNode} = require('@snakesilk/testing/xml');
 const {Parser} = require('@snakesilk/xml-loader');
 const {Elevator} = require('@snakesilk/megaman-traits');
 
-const factory = require('../Elevator.js');
+const factory = require('..')['elevator'];
 
 describe('Elevator factory', function() {
   let parser;
