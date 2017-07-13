@@ -1,5 +1,6 @@
 const {PointLight} = require('three');
-const {AI, Entity, Traits: {Glow}} = require('@snakesilk/engine');
+const {AI, Entity} = require('@snakesilk/engine');
+const {Glow} = require('@snakesilk/platform-traits');
 
 class ChangkeyMaker extends Entity
 {

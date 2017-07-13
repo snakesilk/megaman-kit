@@ -8,7 +8,34 @@
   dependencies:
     three "0.70"
 
-"@snakesilk/testing@0.2.1":
+"@snakesilk/engine@^0.8.0":
+  version "0.8.0"
+  resolved "https://registry.yarnpkg.com/@snakesilk/engine/-/engine-0.8.0.tgz#a8444690de26c3c3420a1cca952a3edb5038619a"
+  dependencies:
+    three "0.70"
+
+"@snakesilk/megaman-traits@^0.0.0":
+  version "0.0.0"
+  resolved "https://registry.yarnpkg.com/@snakesilk/megaman-traits/-/megaman-traits-0.0.0.tgz#5bca7edb94bd57226d37e8d6999dd64a15e8e5ba"
+  dependencies:
+    "@snakesilk/engine" "^0.8.0"
+    "@snakesilk/platform-traits" "^0.1.1"
+
+"@snakesilk/platform-kit@^0.0.1":
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/@snakesilk/platform-kit/-/platform-kit-0.0.1.tgz#1fa473610add47ce505fbe36321929247bb78c98"
+  dependencies:
+    "@snakesilk/platform-traits" "^0.1.1"
+    "@snakesilk/xml-loader" "^0.6.0"
+    three "0.70"
+
+"@snakesilk/platform-traits@^0.1.1":
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@snakesilk/platform-traits/-/platform-traits-0.1.1.tgz#6f9bc305f4097751346d26593ab7e1a79f15ce6e"
+  dependencies:
+    "@snakesilk/engine" "^0.8.0"
+
+"@snakesilk/testing@^0.2.1":
   version "0.2.1"
   resolved "https://registry.yarnpkg.com/@snakesilk/testing/-/testing-0.2.1.tgz#8cf639bb53754cad6454ac9569514c7071a36129"
   dependencies:
@@ -16,11 +43,12 @@
     sinon "^1.17.3"
     three "0.70"
 
-"@snakesilk/xml-loader@^0.4.2":
-  version "0.4.2"
-  resolved "https://registry.yarnpkg.com/@snakesilk/xml-loader/-/xml-loader-0.4.2.tgz#f002b832690a1cb90feffbc3ce8b0c97269840d6"
+"@snakesilk/xml-loader@^0.6.0":
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/@snakesilk/xml-loader/-/xml-loader-0.6.0.tgz#63ac9b46b2e7d475048cda566733cc4d6af66513"
   dependencies:
-    "@snakesilk/engine" "0.5.0"
+    "@snakesilk/engine" "^0.8.0"
+    "@snakesilk/platform-traits" "^0.1.1"
     three "0.70"
 
 "@types/node@^6.0.46":

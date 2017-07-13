@@ -1,13 +1,9 @@
 const expect = require('expect.js');
 const sinon = require('sinon');
 
-const {
-  Entity,
-  Traits: {
-    Projectile,
-    Weapon: WeaponTrait,
-  },
-} = require('@snakesilk/engine');
+const {Entity} = require('@snakesilk/engine');
+const {Projectile} = require('@snakesilk/platform-traits');
+const {Weapon: WeaponTrait} = require('@snakesilk/megaman-traits');
 
 const Weapon = require('../Weapon');
 

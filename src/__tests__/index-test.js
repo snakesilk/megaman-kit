@@ -43,5 +43,9 @@ describe('Main Export', function() {
         });
       });
     });
+
+    it('exports traits registry', () => {
+      expect(Main.Traits).to.be(require('../traits'));
+    });
   });
 });

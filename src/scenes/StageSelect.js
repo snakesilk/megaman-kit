@@ -1,5 +1,6 @@
 const THREE = require('three');
-const {Easing, Entity, Scene, Traits: {Solid}} = require('@snakesilk/engine');
+const {Easing, Entity, Scene} = require('@snakesilk/engine');
+const {Solid} = require('@snakesilk/platform-traits');
 
 class StageSelect extends Scene
 {
