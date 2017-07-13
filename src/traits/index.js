@@ -6,14 +6,14 @@ const {createFactory} = Parser.TraitParser;
 
 const MegamanTraitRegistry = {
   'conveyor': createFactory(Traits.Conveyor),
-  'destructibe': require('./Destructible'),
+  'destructible': require('./Destructible'),
   'door': require('./Door'),
   'elevator': require('./Elevator'),
   'fallaway': createFactory(Traits.Fallaway),
   'headlight': createFactory(Traits.Headlight),
   'stun': createFactory(Traits.Stun),
   'teleport': createFactory(Traits.Teleport),
-  'weapon': createFactory(Traits.Weapon),
+  'weapon': require('./Weapon'),
 };
 
 module.exports = Object.assign({},
