@@ -5,7 +5,7 @@ const {createNode} = require('@snakesilk/testing/xml');
 const {Parser} = require('@snakesilk/xml-loader');
 const {Door} = require('@snakesilk/megaman-traits');
 
-const factory = require('../Door.js');
+const factory = require('..')['door'];
 
 describe('Door factory', function() {
   let parser;

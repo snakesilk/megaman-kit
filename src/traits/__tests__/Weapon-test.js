@@ -4,7 +4,7 @@ const {createNode} = require('@snakesilk/testing/xml');
 const {Parser} = require('@snakesilk/xml-loader');
 const {Weapon} = require('@snakesilk/megaman-traits');
 
-const factory = require('../Weapon.js');
+const factory = require('..')['weapon'];
 
 describe('Weapon factory', function() {
   let parser;
