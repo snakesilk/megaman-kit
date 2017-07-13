@@ -3,10 +3,9 @@ const sinon = require('sinon');
 
 const Mocks = require('@snakesilk/testing/mocks');
 
-const {
-  Game, Entity,
-  Traits: {Health, Teleport},
-} = require('@snakesilk/engine');
+const {Game, Entity} = require('@snakesilk/engine');
+const {Health} = require('@snakesilk/platform-traits');
+const {Teleport} = require('@snakesilk/megaman-traits');
 
 const Level = require('../Level');
 
