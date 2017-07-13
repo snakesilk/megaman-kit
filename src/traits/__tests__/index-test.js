@@ -45,7 +45,7 @@ describe('Registry', () => {
 
     // Megaman-specific
     ['conveyor', 'Conveyor', MegamanTraits],
-    ['destructibe', 'Destructible', MegamanTraits],
+    ['destructible', 'Destructible', MegamanTraits],
     ['door', 'Door', MegamanTraits],
     ['elevator', 'Elevator', MegamanTraits],
     ['fallaway', 'Fallaway', MegamanTraits],
