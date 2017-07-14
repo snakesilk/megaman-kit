@@ -60,7 +60,7 @@ class WeaponParser extends Parser
                 let projectileId = projectileNode.getAttribute('id');
                 let amount = this.getFloat(projectileNode, 'amount') || 1;
                 projectiles.push({
-                    constr: this.loader.resourceManager.get('object', projectileId),
+                    constr: this.loader.resourceManager.get('entity', projectileId),
                     amount: amount,
                 });
             }

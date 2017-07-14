@@ -1,6 +1,5 @@
 const {BitmapFont} = require('@snakesilk/engine');
 const {Parser} = require('@snakesilk/xml-loader');
-const {ObjectParser} = Parser;
 
 const WeaponParser = require('./WeaponParser');
 
@@ -14,18 +13,20 @@ class GameParser extends Parser
 
         super(loader);
 
+        this.entityParser = new Parser.EntityParser(loader);
+
         this._node = node;
     }
     parse()
     {
         const characterNodes = this._node
-            .querySelectorAll(':scope > characters > objects');
+            .querySelectorAll(':scope > characters > entities');
 
         const itemNodes = this._node
-            .querySelectorAll(':scope > items > objects');
+            .querySelectorAll(':scope > items > entities');
 
         const projectileNodes = this._node
-            .querySelectorAll(':scope > projectiles > objects');
+            .querySelectorAll(':scope > projectiles > entities');
 
         return this._parseConfig().then(() => {
             return Promise.all([
@@ -108,13 +109,12 @@ class GameParser extends Parser
         for (let node, i = 0; node = nodes[i++];) {
             const task = this.loader.followNode(node)
                 .then(node => {
-                    const parser = new ObjectParser(this.loader, node);
-                    return parser.getObjects();
+                    return this.entityParser.getObjects(node);
                 })
                 .then(objects => {
                     Object.keys(objects).forEach(id => {
                         const object = objects[id];
-                        resource.addObject(id, object.constructor);
+                        resource.addEntity(id, object.constructor);
                     });
                 });
             tasks.push(task);
@@ -131,7 +131,7 @@ class GameParser extends Parser
         player.defaultWeapon = playerNode.querySelector('weapon')
                                          .getAttribute('default');
 
-        const Character = this.loader.resourceManager.get('object', characterId);
+        const Character = this.loader.resourceManager.get('entity', characterId);
         const character = new Character;
 
         const invincibilityNode = playerNode.querySelector('invincibility');

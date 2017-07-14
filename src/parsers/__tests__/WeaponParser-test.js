@@ -32,7 +32,7 @@ describe('WeaponParser', function() {
 
         describe(`when parsing ${xmlString}`, () => {
             beforeEach(() => {
-                parser.loader.resourceManager.addObject(projectileId, Entity);
+                parser.loader.resourceManager.addEntity(projectileId, Entity);
                 const node = createNode(xmlString);
                 Weapon = parser.parseWeapon(node);
             });
