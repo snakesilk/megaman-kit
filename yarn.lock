@@ -15,11 +15,11 @@
     "@snakesilk/engine" "^0.8.0"
     "@snakesilk/platform-traits" "^0.1.2"
 
-"@snakesilk/platform-kit@^0.0.1":
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/@snakesilk/platform-kit/-/platform-kit-0.0.1.tgz#1fa473610add47ce505fbe36321929247bb78c98"
+"@snakesilk/platform-kit@^0.1.2":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@snakesilk/platform-kit/-/platform-kit-0.1.2.tgz#fa8d82118dc5eef4058788ccae77b64038f766d6"
   dependencies:
-    "@snakesilk/platform-traits" "^0.1.1"
+    "@snakesilk/platform-traits" "^0.1.2"
     "@snakesilk/xml-loader" "^0.6.0"
     three "0.70"
 
