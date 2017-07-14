@@ -1,4 +1,4 @@
-const {Parser: {SceneParser}} = require('@snakesilk/xml-loader');
+const {Parser: {SceneParser}, Util: {ensure}} = require('@snakesilk/xml-loader');
 const StageSelect = require('../scenes/StageSelect');
 
 function fill(x, n) {
@@ -14,41 +14,34 @@ function fill(x, n) {
 
 class StageSelectParser extends SceneParser
 {
-    constructor(loader, node)
-    {
-        if (node.tagName !== 'scene' || node.getAttribute('type') !== 'stage-select') {
-            throw new TypeError('Node not <scene type="stage-select">');
-        }
+    getScene(node) {
+        ensure(node, 'scene');
 
-        super(loader, node);
-    }
-    _parse()
-    {
-        this._scene = new StageSelect;
+        const context = this.createContext(new StageSelect());
 
-        this._parseAudio();
-        this._parseEvents();
-        this._setupBehavior();
-        return this._parseObjects().then(() => {
-            return this._parseLayout();
+        this._parseAudio(node, context);
+        this._parseEvents(node, context);
+        this._setupBehavior(node, context);
+        return this._parseObjects(node, context)
+        .then(() => {
+            return this._parseLayout(node, context);
         }).then(() => {
             return this.loader.resourceLoader.complete();
         }).then(() => {
-            return this._scene;
+            return context;
         });
     }
-    _createCaption(text)
-    {
+
+    _createCaption(text) {
         text = text.split(" ");
         text[1] = fill(" ", 6 - text[1].length) + text[1];
         text = text.join("\n");
         return this.loader.resourceManager.get('font', 'nintendo')(text).createMesh();
     }
-    _parseLayout()
-    {
-        const sceneNode = this._node;
-        const scene = this._scene;
-        const objects = this._objects;
+
+    _parseLayout(node, context) {
+        const sceneNode = node;
+        const {scene} = context;
         const res = this.loader.resourceManager;
 
         const backgroundNode = sceneNode.getElementsByTagName('background')[0];
@@ -57,9 +50,9 @@ class StageSelectParser extends SceneParser
         const spacingNode = sceneNode.querySelector('spacing');
 
         scene.setBackgroundColor(this.getAttr(backgroundNode, 'color'));
-        scene.setBackgroundModel(this._createObject('background').model);
-        scene.setIndicator(this._createObject('indicator').model);
-        scene.setFrame(this._createObject('frame').model);
+        scene.setBackgroundModel(context.createEntity('background').model);
+        scene.setIndicator(context.createEntity('indicator').model);
+        scene.setFrame(context.createEntity('frame').model);
 
         if (spacingNode) {
             scene.spacing.copy(this.getVector2(spacingNode));
@@ -78,52 +71,51 @@ class StageSelectParser extends SceneParser
             const name = this.getAttr(stageNode, 'name');
             const text = this.getAttr(stageNode, 'caption');
             const caption = this._createCaption(text);
-            const avatar = this._createObject(id).model;
+            const avatar = context.createEntity(id).model;
             const characterId = this.getAttr(stageNode, 'character');
-            scene.addStage(avatar, caption, name, characterId && res.get('object', characterId));
+            scene.addStage(avatar, caption, name, characterId && res.get('entity', characterId));
         }
 
-        this._parseReveal();
+        this._parseReveal(node, context);
 
         const initialIndex = this.getInt(indicatorNode, 'initial-index') || 0;
         scene.initialIndex = initialIndex;
 
         return Promise.resolve();
     }
-    _parseReveal()
-    {
-        const starNodes = this._node.querySelectorAll(':scope > layout > stars > star');
+
+    _parseReveal(node, context) {
+        const starNodes = node.querySelectorAll(':scope > layout > stars > star');
         for (let node, i = 0; node = starNodes[i]; ++i) {
             const id = this.getAttr(node, 'object');
             const count = this.getInt(node, 'count');
             const depth = this.getFloat(node, 'depth') || 0;
             for (let j = 0; j < count; ++j) {
-                const model = this._createObject(id).model;
+                const model = context.createEntity(id).model;
                 model.position.z = -depth;
-                this._scene.addStar(model, depth);
+                context.scene.addStar(model, depth);
             }
         }
 
-        const podiumNode = this._node.querySelector(':scope > layout > podium');
+        const podiumNode = node.querySelector(':scope > layout > podium');
         if (podiumNode) {
             const id = this.getAttr(podiumNode, 'object');
-            this._scene.setPodium(this._createObject(id).model);
+            context.scene.setPodium(context.createEntity(id).model);
         }
     }
-    _setupBehavior()
-    {
-        const stageSelectScene = this._scene;
+
+    _setupBehavior(node, {scene}) {
         const game = this.loader.game;
-        this._scene.events.bind(this._scene.EVENT_STAGE_ENTER, (stage, index) => {
+        scene.events.bind(scene.EVENT_STAGE_ENTER, (stage, index) => {
             try {
                 this.loader.loadSceneByName(stage.name).then(scene => {
                     scene.events.bind(scene.EVENT_END, () => {
-                        game.setScene(stageSelectScene);
+                        game.setScene(scene);
                     });
                     game.setScene(scene);
                 });
             } catch (err) {
-                game.setScene(stageSelectScene);
+                game.setScene(scene);
             }
         });
     }

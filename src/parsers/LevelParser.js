@@ -1,53 +1,47 @@
-const {Parser} = require('@snakesilk/xml-loader');
+const {Parser, Util: {ensure, find}} = require('@snakesilk/xml-loader');
 const Spawner = require('@snakesilk/engine/dist/object/Spawner');
 const Level = require('../scenes/Level');
 
 class LevelParser extends Parser.SceneParser
 {
-    _parse()
-    {
-        if (this._node.tagName !== 'scene') {
-            throw new TypeError('Node not <scene type="level">');
-        }
+    getScene(node) {
+        ensure(node, 'scene');
 
-        this._scene = new Level();
+        const context = this.createContext(new Level());
 
-        this._parseAudio();
-        this._parseEvents();
-        this._parseMusic();
-        this._parseBehaviors();
-        this._parseCamera();
-        this._parseCheckpoints();
-        this._parseGravity();
-        this._parseSequences();
-        this._parseSpawners();
-        this._parseText();
+        this._parseAudio(node, context);
+        this._parseEvents(node, context);
+        this._parseMusic(node, context);
+        this._parseBehaviors(node, context);
+        this._parseCamera(node, context);
+        this._parseCheckpoints(node, context);
+        this._parseGravity(node, context);
+        this._parseSequences(node, context);
+        this._parseSpawners(node, context);
+        this._parseText(node, context);
 
-        return this._parseObjects().then(() => {
-            return this._parseLayout();
+        return this._parseObjects(node, context).then(() => {
+            return this._parseLayout(node, context);
         }).then(() => {
-            return this._parseScripts();
+            return this._parseScripts(node, context);
         }).then(() => {
             return this.loader.resourceLoader.complete();
         }).then(() => {
-            return this._scene;
+            return context;
         });
     }
-    _parseCheckpoints()
-    {
-        const checkpointNodes = this._node.querySelectorAll(':scope > checkpoints > checkpoint');
-        const level = this._scene;
+
+    _parseCheckpoints(node, {scene: level}) {
+        const checkpointNodes = find(node, 'checkpoints > checkpoint');
         for (let checkpointNode, i = 0; checkpointNode = checkpointNodes[i]; ++i) {
             const p = this.getPosition(checkpointNode);
             const r = this.getFloat(checkpointNode, 'radius') || undefined;
             level.addCheckPoint(p.x, p.y, r);
         }
-        return Promise.resolve();
     }
-    _parseMusic()
-    {
-        const nodes = this._node.querySelectorAll(':scope > music > *');
-        const scene = this._scene;
+
+    _parseMusic(node, {scene}) {
+        const nodes = find(node, 'music > *');
         for (let node, i = 0; node = nodes[i]; ++i) {
             const type = node.tagName;
             const id = this.getAttr(node, 'id')
@@ -63,10 +57,10 @@ class LevelParser extends Parser.SceneParser
             }
         }
     }
-    _parseSpawners()
-    {
-        const world = this._scene.world;
-        const spawnerNodes = this._node.querySelectorAll('layout > spawner');
+
+    _parseSpawners(node, {scene}) {
+        const world = scene.world;
+        const spawnerNodes = find(node, 'layout > spawner');
         for (let spawnerNode, i = 0; spawnerNode = spawnerNodes[i]; ++i) {
             const spawner = new Spawner();
             const position = this.getPosition(spawnerNode);
@@ -76,7 +70,7 @@ class LevelParser extends Parser.SceneParser
             const spawnableNodes = spawnerNode.getElementsByTagName('*');
             for (let spawnableNode, j = 0; spawnableNode = spawnableNodes[j]; ++j) {
                 const objectId = spawnableNode.getAttribute('id');
-                const objectRef = this.loader.resourceManager.get('object', objectId);
+                const objectRef = this.loader.resourceManager.get('entity', objectId);
                 spawner.pool.push(objectRef);
             }
 
@@ -90,24 +84,24 @@ class LevelParser extends Parser.SceneParser
         }
         return Promise.resolve();
     }
-    _parseScripts(scriptsNode, level)
-    {
-        const scriptNodes = this._node.querySelectorAll(':scope > scripts > *');
+
+    _parseScripts(node, {scene: level}) {
+        const scriptNodes = find(node, 'scripts > *');
         for (let scriptNode, i = 0; scriptNode = scriptNodes[i++];) {
             const type = scriptNode.tagName;
             const func = eval(scriptNode.textContent);
             if (typeof func === "function") {
                 if (type === 'bootstrap') {
-                    func(this._scene);
+                    func(scene);
                 }
             }
         }
     }
-    _parseText()
-    {
+
+    _parseText(node, {scene}) {
         const res = this.loader.resourceManager;
         if (res.has('font', 'nintendo')) {
-            this._scene.assets['start-caption'] = res.get('font', 'nintendo')('READY').createMesh();
+            scene.assets['start-caption'] = res.get('font', 'nintendo')('READY').createMesh();
         }
     }
 }

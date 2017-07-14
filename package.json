@@ -10,10 +10,10 @@
     "watch": "yarn run build -- --watch"
   },
   "dependencies": {
-    "@snakesilk/engine": "^0.8.0",
+    "@snakesilk/engine": "^0.10.0",
     "@snakesilk/megaman-traits": "^0.0.2",
     "@snakesilk/platform-traits": "^0.1.2",
-    "@snakesilk/xml-loader": "^0.6.0",
+    "@snakesilk/xml-loader": "^0.7.0",
     "three": "0.70"
   },
   "devDependencies": {
