@@ -10,14 +10,14 @@
     "watch": "yarn run build -- --watch"
   },
   "dependencies": {
-    "@snakesilk/engine": "^0.10.0",
-    "@snakesilk/megaman-traits": "^0.0.2",
-    "@snakesilk/platform-traits": "^0.1.2",
-    "@snakesilk/xml-loader": "^0.7.0",
+    "@snakesilk/engine": ">=0.10.0",
+    "@snakesilk/megaman-traits": ">=0.0.3",
+    "@snakesilk/platform-traits": ">=0.1.3",
+    "@snakesilk/xml-loader": ">=0.7.3",
     "three": "0.70"
   },
   "devDependencies": {
-    "@snakesilk/testing": "^0.2.1",
+    "@snakesilk/testing": ">=0.2.1",
     "babel-cli": "^6.24.1",
     "babel-preset-es2015": "^6.24.1",
     "expect.js": "^0.3.1",
