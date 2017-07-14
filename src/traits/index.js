@@ -1,10 +1,9 @@
 const {Parser} = require('@snakesilk/xml-loader');
-const {Traits: PlatformTraitRegistry} = require('@snakesilk/platform-kit');
 const Traits = require('@snakesilk/megaman-traits');
 
 const {createFactory} = Parser.TraitParser;
 
-const MegamanTraitRegistry = {
+module.exports = {
   'conveyor': createFactory(Traits.Conveyor),
   'destructible': require('./Destructible'),
   'door': require('./Door'),
@@ -15,7 +14,3 @@ const MegamanTraitRegistry = {
   'teleport': createFactory(Traits.Teleport),
   'weapon': require('./Weapon'),
 };
-
-module.exports = Object.assign({},
-  PlatformTraitRegistry,
-  MegamanTraitRegistry);
