@@ -17,33 +17,6 @@ describe('Registry', () => {
   });
 
   [
-    // Inherited from Platform kit.
-    ['attach', 'Attach', PlatformTraits],
-    ['climbable', 'Climbable', PlatformTraits],
-    ['climber', 'Climber', PlatformTraits],
-    ['contact-damage', 'ContactDamage', PlatformTraits],
-    ['death-spawn', 'DeathSpawn', PlatformTraits],
-    ['death-zone', 'DeathZone', PlatformTraits],
-    ['disappearing', 'Disappearing', PlatformTraits],
-    ['environment', 'Environment', PlatformTraits],
-    ['fixed-force', 'FixedForce', PlatformTraits],
-    ['glow', 'Glow', PlatformTraits],
-    ['health', 'Health', PlatformTraits],
-    ['invincibility', 'Invincibility', PlatformTraits],
-    ['jump', 'Jump', PlatformTraits],
-    ['lifetime', 'Lifetime', PlatformTraits],
-    ['light', 'Light', PlatformTraits],
-    ['light-control', 'LightControl', PlatformTraits],
-    ['move', 'Move', PlatformTraits],
-    ['physics', 'Physics', PlatformTraits],
-    //['pickupable', 'Pickupable', PlatformTraits],
-    ['projectile', 'Projectile', PlatformTraits],
-    ['rotate', 'Rotate', PlatformTraits],
-    ['solid', 'Solid', PlatformTraits],
-    ['spawn', 'Spawn', PlatformTraits],
-    ['translate', 'Translate', PlatformTraits],
-
-    // Megaman-specific
     ['conveyor', 'Conveyor', MegamanTraits],
     ['destructible', 'Destructible', MegamanTraits],
     ['door', 'Door', MegamanTraits],
@@ -53,7 +26,6 @@ describe('Registry', () => {
     ['stun', 'Stun', MegamanTraits],
     ['teleport', 'Teleport', MegamanTraits],
     ['weapon', 'Weapon', MegamanTraits],
-
   ].forEach(([shortName, traitName, source]) => {
     describe(`when trait node name is "${shortName}"`, function() {
       let parser, trait;
@@ -66,6 +38,51 @@ describe('Registry', () => {
         const node = createNode(`<trait name="${shortName}"/>`);
         trait = parser.parseTrait(node)();
         expect(trait).to.be.a(source[traitName]);
+      });
+    });
+  });
+
+  [
+    'attach',
+    'climbable',
+    'climber',
+    'contact-damage',
+    'death-spawn',
+    'death-zone',
+    'disappearing',
+    'environment',
+    'fixed-force',
+    'glow',
+    'health',
+    'invincibility',
+    'jump',
+    'lifetime',
+    'light',
+    'light-control',
+    'move',
+    'physics',
+    'pickupable',
+    'projectile',
+    'rotate',
+    'solid',
+    'spawn',
+    'translate',
+  ].forEach(shortName => {
+    describe(`when trait node name is "${shortName}"`, function() {
+      let parser, trait;
+
+      beforeEach(() => {
+        parser = new Parser.TraitParser(loader);
+      });
+
+      it('throws an error', () => {
+        const node = createNode(`<trait name="${shortName}"/>`);
+        expect(() => {
+          trait = parser.parseTrait(node)();
+        }).to.throwError(error => {
+          expect(error).to.be.a(TypeError);
+          expect(error.message).to.be(`Trait factory "${shortName}" does not exist.`);
+        });
       });
     });
   });

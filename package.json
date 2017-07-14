@@ -12,7 +12,6 @@
   "dependencies": {
     "@snakesilk/engine": "^0.8.0",
     "@snakesilk/megaman-traits": "^0.0.2",
-    "@snakesilk/platform-kit": "^0.1.2",
     "@snakesilk/xml-loader": "^0.6.0",
     "three": "0.70"
   },
