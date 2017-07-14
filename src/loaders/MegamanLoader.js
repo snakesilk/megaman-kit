@@ -6,30 +6,34 @@ const LevelParser = require('../parsers/LevelParser');
 
 class MegamanLoader extends XMLLoader
 {
-    constructor(game)
-    {
+    constructor(game) {
         super(game);
+
+        this.levelParser = new LevelParser(this);
+        this.stageSelectParser = new StageSelectParser(this);
+
         this.entryPoint = null;
         this.sceneIndex = {};
     }
-    loadGame(url)
-    {
+
+    loadGame(url) {
         return this.asyncLoadXML(url).then(doc => {
             const node = doc.querySelector('game');
             const parser = new GameParser(this, node);
             return parser.parse();
         });
     }
-    loadSceneByName(name)
-    {
+
+    loadSceneByName(name) {
         if (!this.sceneIndex[name]) {
             throw new Error(`Scene "${name}" does not exist.`);
         }
 
-        return this.loadScene(this.sceneIndex[name].url);
+        return this.loadScene(this.sceneIndex[name].url)
+        .then(({scene}) => scene);
     }
-    parseScene(node)
-    {
+
+    parseScene(node) {
         if (node.tagName !== 'scene') {
             throw new TypeError('Node not <scene>');
         }
@@ -37,14 +41,13 @@ class MegamanLoader extends XMLLoader
         const type = node.getAttribute('type');
         if (type) {
             if (type === 'level') {
-                const parser = new LevelParser(this, node);
-                return parser.getScene();
+                return this.levelParser.getScene(node);
             } else if (type === 'stage-select') {
-                const parser = new StageSelectParser(this, node);
-                return parser.getScene();
+                return this.stageSelectParser.getScene(node);
             } else {
                 throw new Error(`Scene type "${type}" not recognized`);
             }
+
         } else {
             return super.parseScene(node);
         }
