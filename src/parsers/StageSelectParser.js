@@ -1,4 +1,4 @@
-const {Parser: {SceneParser}, Util: {ensure}} = require('@snakesilk/xml-loader');
+const {Parser, Util: {children, ensure}} = require('@snakesilk/xml-loader');
 const StageSelect = require('../scenes/StageSelect');
 
 function fill(x, n) {
@@ -12,23 +12,26 @@ function fill(x, n) {
     return s;
 }
 
-class StageSelectParser extends SceneParser
+class StageSelectParser extends Parser
 {
+    constructor(loader) {
+        super(loader);
+        this.sceneParser = new Parser.SceneParser(loader);
+    }
+
     getScene(node) {
-        ensure(node, 'scene');
+        ensure(node, 'stage-select');
 
-        const context = this.createContext(new StageSelect());
+        const sceneNode = children(node, 'scene')[0];
 
-        this._parseAudio(node, context);
-        this._parseEvents(node, context);
-        this._setupBehavior(node, context);
-        return this._parseObjects(node, context)
-        .then(() => {
-            return this._parseLayout(node, context);
-        }).then(() => {
-            return this.loader.resourceLoader.complete();
-        }).then(() => {
-            return context;
+        return this.sceneParser.getScene(sceneNode)
+        .then(context => {
+            const stageSelect = new StageSelect(context.scene);
+            this._setupBehavior(node, context, stageSelect);
+            this._parseReveal(node, context, stageSelect);
+            this._parseLayout(node, context, stageSelect);
+            return this.loader.resourceLoader.complete()
+            .then(() => context);
         });
     }
 
@@ -39,7 +42,7 @@ class StageSelectParser extends SceneParser
         return this.loader.resourceManager.get('font', 'nintendo')(text).createMesh();
     }
 
-    _parseLayout(node, context) {
+    _parseLayout(node, context, stageSelect) {
         const sceneNode = node;
         const {scene} = context;
         const res = this.loader.resourceManager;
@@ -49,23 +52,23 @@ class StageSelectParser extends SceneParser
         const indicatorNode = sceneNode.getElementsByTagName('indicator')[0];
         const spacingNode = sceneNode.querySelector('spacing');
 
-        scene.setBackgroundColor(this.getAttr(backgroundNode, 'color'));
-        scene.setBackgroundModel(context.createEntity('background').model);
-        scene.setIndicator(context.createEntity('indicator').model);
-        scene.setFrame(context.createEntity('frame').model);
+        stageSelect.setBackgroundColor(this.getAttr(backgroundNode, 'color'));
+        stageSelect.setBackgroundModel(context.createEntity('background').model);
+        stageSelect.setIndicator(context.createEntity('indicator').model);
+        stageSelect.setFrame(context.createEntity('frame').model);
 
         if (spacingNode) {
-            scene.spacing.copy(this.getVector2(spacingNode));
+            stageSelect.spacing.copy(this.getVector2(spacingNode));
         }
         if (cameraNode) {
-            scene.cameraDistance = this.getFloat(cameraNode, 'distance');
+            stageSelect.cameraDistance = this.getFloat(cameraNode, 'distance');
         }
         if (indicatorNode) {
-            scene.indicatorInterval = this.getFloat(indicatorNode, 'blink-interval');
+            stageSelect.indicatorInterval = this.getFloat(indicatorNode, 'blink-interval');
         }
 
         const stagesNode = sceneNode.getElementsByTagName('stage');
-        scene.rowLength = Math.ceil(Math.sqrt(stagesNode.length));
+        stageSelect.rowLength = Math.ceil(Math.sqrt(stagesNode.length));
         for (let stageNode, i = 0; stageNode = stagesNode[i++];) {
             const id = this.getAttr(stageNode, 'id')
             const name = this.getAttr(stageNode, 'name');
@@ -73,18 +76,14 @@ class StageSelectParser extends SceneParser
             const caption = this._createCaption(text);
             const avatar = context.createEntity(id).model;
             const characterId = this.getAttr(stageNode, 'character');
-            scene.addStage(avatar, caption, name, characterId && res.get('entity', characterId));
+            stageSelect.addStage(avatar, caption, name, characterId && res.get('entity', characterId));
         }
 
-        this._parseReveal(node, context);
-
         const initialIndex = this.getInt(indicatorNode, 'initial-index') || 0;
-        scene.initialIndex = initialIndex;
-
-        return Promise.resolve();
+        stageSelect.initialIndex = initialIndex;
     }
 
-    _parseReveal(node, context) {
+    _parseReveal(node, context, stageSelect) {
         const starNodes = node.querySelectorAll(':scope > layout > stars > star');
         for (let node, i = 0; node = starNodes[i]; ++i) {
             const id = this.getAttr(node, 'object');
@@ -93,24 +92,32 @@ class StageSelectParser extends SceneParser
             for (let j = 0; j < count; ++j) {
                 const model = context.createEntity(id).model;
                 model.position.z = -depth;
-                context.scene.addStar(model, depth);
+                stageSelect.addStar(model, depth);
             }
         }
 
         const podiumNode = node.querySelector(':scope > layout > podium');
         if (podiumNode) {
             const id = this.getAttr(podiumNode, 'object');
-            context.scene.setPodium(context.createEntity(id).model);
+            stageSelect.setPodium(context.createEntity(id).model);
         }
     }
 
-    _setupBehavior(node, {scene}) {
+    _setupBehavior(node, {scene}, stageSelect) {
+        /*
+        Bind action to load a stage to stage select event
+        and on the loading of the next scene bind to re-enter
+        this stage select on end.
+        */
+
         const game = this.loader.game;
-        scene.events.bind(scene.EVENT_STAGE_ENTER, (stage, index) => {
+        const stageSelectScene = scene;
+        scene.events.bind(stageSelect.EVENT_STAGE_ENTER, (stage, index) => {
             try {
-                this.loader.loadSceneByName(stage.name).then(scene => {
+                this.loader.loadSceneByName(stage.name)
+                .then(scene => {
                     scene.events.bind(scene.EVENT_END, () => {
-                        game.setScene(scene);
+                        game.setScene(stageSelectScene);
                     });
                     game.setScene(scene);
                 });
