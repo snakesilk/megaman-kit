@@ -1,13 +1,15 @@
 const THREE = require('three');
 const {Keyboard, SyncPromise} = require('@snakesilk/engine');
 
+const Events = {
+    EVENT_PLAYER_RESET: 'player-reset',
+    EVENT_PLAYER_DEATH: 'player-death',
+};
+
 class Level
 {
     constructor(scene) {
         this.scene = scene;
-
-        this.EVENT_PLAYER_RESET = 'player-reset';
-        this.EVENT_PLAYER_DEATH = 'player-death';
 
         this.assets = {};
         this.player = null;
@@ -27,7 +29,7 @@ class Level
             this.scene.events.trigger(this.EVENT_PLAYER_DEATH);
             this.scene.waitFor(this.deathRespawnTime).then(() => {
                 if (this.player.lives <= 0) {
-                    this.scene.events.trigger(this.EVENT_END);
+                    this.scene.events.trigger(this.scene.EVENT_END);
                 } else {
                     this.resetPlayer();
                 }
@@ -75,6 +77,14 @@ class Level
             'pos': new THREE.Vector2(x, y),
             'radius': r || 100,
         });
+    }
+
+    addPlayer(entity) {
+        this.scene.world.addObject(entity);
+    }
+
+    removePlayer(entity) {
+        this.scene.world.removeObject(entity);
     }
 
     createCharacterInput(game) {
@@ -231,7 +241,7 @@ class Level
         const scene = this.scene;
         const {world, camera} = scene;
 
-        world.removeObject(character);
+        this.removePlayer(character);
 
         character.reset();
         character.direction.set(character.DIRECTION_RIGHT, 0);
@@ -256,18 +266,21 @@ class Level
             character.events.bind(character.teleport.EVENT_END, startFollow);
 
             this.resetCheckpoint().then(() => {
-                world.addObject(character);
+                this.addPlayer(character);
             });
         }
         else {
             character.moveTo(new THREE.Vector2(0, 0));
             camera.follow(character);
-            world.addObject(character);
+            this.addPlayer(character);
             this.resumeGamePlay();
         }
 
-        scene.events.trigger(this.EVENT_PLAYER_RESET);
+        scene.events.trigger(this.EVENT_PLAYER_RESET, [player]);
     }
 }
+
+Object.assign(Level, Events);
+Object.assign(Level.prototype, Events);
 
 module.exports = Level;

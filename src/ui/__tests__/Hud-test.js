@@ -3,7 +3,10 @@ const sinon = require('sinon');
 
 const Mocks = require('@snakesilk/testing/mocks');
 
-const {Game, Timer, Scene} = require('@snakesilk/engine');
+const {Game, Entity, Timer, Scene} = require('@snakesilk/engine');
+const {Health} = require('@snakesilk/platform-traits');
+const {Weapon} = require('@snakesilk/megaman-traits');
+
 const Level = require('../../scenes/Level');
 
 const Hud = require('../Hud');
@@ -18,6 +21,11 @@ describe('Hud', function() {
 
     hud = new Hud;
     game = new Game();
+    const character = new Entity();
+    character.applyTrait(new Health());
+    character.applyTrait(new Weapon());
+    game.player.setCharacter(character);
+
     dom = new Mocks.DOMNode;
   });
 
@@ -162,44 +170,50 @@ describe('Hud', function() {
       sinon.stub(hud, 'hideHud');
     });
 
-    describe('and scene of type Level set', function() {
-      let level;
+    describe('and scene set', function() {
+      let level, scene;
+
       beforeEach(function() {
-        level = new Level;
-        game.setScene(level);
+        scene = new Scene();
+        level = new Level(scene);
+        game.setScene(scene);
+      });
+
+      it('calls showHud', () => {
+        expect(hud.showHud.callCount).to.be(1);
       });
 
       describe('and EVENT_PLAYER_RESET emitted on level', function() {
         beforeEach(function() {
-          level.events.trigger(level.EVENT_PLAYER_RESET);
+          scene.events.trigger(level.EVENT_PLAYER_RESET);
         });
 
         it('shows the hud', function() {
-          expect(hud.showHud.calledOnce).to.be(true);
+          expect(hud.showHud.callCount).to.be(2);
         });
       });
 
       describe('and EVENT_PLAYER_DEATH emitted on level', function() {
         beforeEach(function() {
-          level.events.trigger(level.EVENT_PLAYER_DEATH);
+          scene.events.trigger(level.EVENT_PLAYER_DEATH);
         });
 
         it('hides the hud', function() {
-          expect(hud.hideHud.calledOnce).to.be(true);
+          expect(hud.hideHud.callCount).to.be(1);
         });
       });
     });
 
-    describe('and scene of type Level unset', function() {
-      let level;
+    describe('and scene unset', function() {
+      let scene;
       beforeEach(function() {
-        level = new Level;
-        game.setScene(level);
-        game.unsetScene(level);
+        scene = new Scene();
+        game.setScene(scene);
+        game.unsetScene(scene);
       });
 
       it('hides the hud', function() {
-        expect(hud.hideHud.calledOnce).to.be(true);
+        expect(hud.hideHud.callCount).to.be(1);
       });
     });
   });
