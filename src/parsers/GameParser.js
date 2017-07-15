@@ -1,130 +1,106 @@
 const {BitmapFont} = require('@snakesilk/engine');
-const {Parser} = require('@snakesilk/xml-loader');
+const {Parser, Util: {children, ensure, find}} = require('@snakesilk/xml-loader');
 
 const WeaponParser = require('./WeaponParser');
 
 class GameParser extends Parser
 {
-    constructor(loader, node)
-    {
-        if (!node || node.tagName !== 'game') {
-            throw new TypeError('Node not <game>');
-        }
-
+    constructor(loader) {
         super(loader);
 
         this.entityParser = new Parser.EntityParser(loader);
-
-        this._node = node;
+        this.weaponParser = new WeaponParser(loader);
     }
-    parse()
-    {
-        const characterNodes = this._node
-            .querySelectorAll(':scope > characters > entities');
 
-        const itemNodes = this._node
-            .querySelectorAll(':scope > items > entities');
+    parseGame(node) {
+        ensure(node, 'game');
 
-        const projectileNodes = this._node
-            .querySelectorAll(':scope > projectiles > entities');
+        const game = this.loader.game;
 
-        return this._parseConfig().then(() => {
-            return Promise.all([
-                this._parseAudio(),
-                this._parseFonts(),
-            ]);
-        }).then(() => {
-            return this._parseObjects(itemNodes);
-        }).then(() => {
-            return Promise.all([
-                this._parseEntrypoint(),
-                this._parseObjects(characterNodes),
-                this._parseObjects(projectileNodes),
-                this._parseScenes(),
-            ]);
-        }).then(() => {
-            return this._parsePlayer();
-        }).then(() => {
-            return this._parseWeapons();
-        }).then(() => {
-            return this.loader.entrypoint;
+        const entrypoint = children(node, 'entrypoint')[0].getAttribute('scene');
+        const characterNodes = find(node, 'characters > entities');
+        const itemNodes = find(node, 'items > entities');
+        const projectileNodes = find(node, 'projectiles > entities');
+
+        this._parseConfig(node);
+
+        return Promise.all([
+            this._parseAudio(node),
+            this._parseFonts(node),
+        ])
+        .then(() => this._parseEntities(itemNodes))
+        .then(() => Promise.all([
+            this._parseEntities(characterNodes),
+            this._parseEntities(projectileNodes),
+            this._parseScenes(node),
+        ]))
+        .then(() => this._parsePlayer(node, game.player))
+        .then(() => this._parseWeapons(node))
+        .then(() => this.loader.loadSceneByName(entrypoint))
+        .then(scene => {
+            game.setScene(scene);
         });
     }
-    _parseAudio()
-    {
-        const audioNodes = this._node.querySelectorAll('audio > *');
-        const tasks = [];
-        for (let audioNode, i = 0; audioNode = audioNodes[i++];) {
-            const task = this.getAudio(audioNode)
-                .then(audio => {
-                    const id = this.getAttr(audioNode, 'id');
-                    this.loader.resourceManager.addAudio(id, audio);
-                });
-            tasks.push(task);
-        }
-        return Promise.all(tasks);
+
+    _parseAudio(node) {
+        const audioNodes = find(node, 'audio > *');
+        return Promise.all(audioNodes.map(node => {
+            return this.getAudio(node)
+            .then(audio => {
+                const id = this.getAttr(node, 'id');
+                this.loader.resourceManager.addAudio(id, audio);
+            });
+        }));
     }
-    _parseConfig()
-    {
-        const configNode = this._node.querySelector(':scope > config');
-        const textureScale = this.getInt(configNode, 'texture-scale');
-        if (textureScale) {
-            this.loader.textureScale = textureScale;
-        }
-        return Promise.resolve();
+
+    _parseConfig(node) {
+        const configNodes = children(node, 'config');
+        configNodes.forEach(node => {
+            const textureScale = this.getInt(node, 'texture-scale');
+            if (textureScale) {
+                this.loader.textureScale = textureScale;
+            }
+        });
     }
-    _parseEntrypoint()
-    {
-        const entrypoint= this._node.querySelector(':scope > entrypoint');
-        if (entrypoint) {
-            this.loader.entrypoint = entrypoint.getAttribute('scene');
-        }
-        return Promise.resolve();
-    }
-    _parseFonts()
-    {
-        const nodes = this._node.querySelectorAll(':scope > fonts > font');
-        const tasks = [];
-        const loader = this.loader;
-        for (let node, i = 0; node = nodes[i++];) {
+
+    _parseFonts(node) {
+        const fontNodes = find(node, 'fonts > font');
+        return Promise.all(fontNodes.map(node => {
             const url = this.resolveURL(node, 'url');
-            const task = loader.resourceLoader.loadImage(url).then(canvas => {
+            const task = this.loader.resourceLoader.loadImage(url)
+            .then(canvas => {
                 const fontId = this.getAttr(node, 'id');
                 const size = this.getVector2(node, 'w', 'h');
                 const map = node.getElementsByTagName('map')[0].textContent;
+
                 const font = new BitmapFont(map, size, canvas);
-                font.scale = loader.textureScale;
-                loader.resourceManager.addFont(fontId, function(text) {
+                font.scale = this.loader.textureScale;
+
+                const createTextTexture = function createTextTexture(text) {
                     return font.createText(text);
+                };
+
+                this.loader.resourceManager.addFont(fontId, createTextTexture);
+            });
+        }));
+    }
+
+    _parseEntities(nodes) {
+        const resource = this.loader.resourceManager;
+        return Promise.all(nodes.map(node => {
+            return this.loader.followNode(node)
+            .then(node => this.entityParser.getObjects(node))
+            .then(objects => {
+                Object.keys(objects).forEach(id => {
+                    const object = objects[id];
+                    resource.addEntity(id, object.constructor);
                 });
             });
-            tasks.push(task);
-        }
-        return Promise.all(tasks);
+        }));
     }
-    _parseObjects(nodes)
-    {
-        const tasks = [];
-        const resource = this.loader.resourceManager;
-        for (let node, i = 0; node = nodes[i++];) {
-            const task = this.loader.followNode(node)
-                .then(node => {
-                    return this.entityParser.getObjects(node);
-                })
-                .then(objects => {
-                    Object.keys(objects).forEach(id => {
-                        const object = objects[id];
-                        resource.addEntity(id, object.constructor);
-                    });
-                });
-            tasks.push(task);
-        }
-        return Promise.all(tasks);
-    }
-    _parsePlayer()
-    {
-        const playerNode = this._node.querySelector('player');
-        const player = this.loader.game.player;
+
+    _parsePlayer(node, player) {
+        const playerNode = children(node, 'player')[0];
         const characterId = playerNode.querySelector('character')
                                       .getAttribute('id');
 
@@ -132,40 +108,34 @@ class GameParser extends Parser
                                          .getAttribute('default');
 
         const Character = this.loader.resourceManager.get('entity', characterId);
-        const character = new Character;
-
-        const invincibilityNode = playerNode.querySelector('invincibility');
+        const character = new Character();
 
         player.retries = this.getInt(playerNode, 'retries') || 3;
         player.setCharacter(character);
-
-        return Promise.resolve();
     }
-    _parseScenes()
-    {
-        const nodes = this._node.querySelectorAll(':scope > scenes > scene');
+
+    _parseScenes(node) {
+        const nodes = find(node, 'scenes > scene');
         const index = this.loader.sceneIndex;
-        for (let node, i = 0; node = nodes[i++];) {
+        nodes.forEach(node => {
             const name = this.getAttr(node, 'name');
             index[name] = {
                 'url': this.loader.resolveURL(node, 'src'),
             };
-        }
-        return Promise.resolve();
+        });
     }
-    _parseWeapons()
-    {
-        const weaponsNode = this._node.querySelector(':scope > weapons');
-        if (weaponsNode) {
+
+    _parseWeapons(node) {
+        const weaponsNodes = children(node, 'weapons');
+        weaponsNodes.forEach(node => {
             const resource = this.loader.resourceManager;
-            const weaponParser = new WeaponParser(this.loader);
-            const weapons = weaponParser.parse(weaponsNode);
+            const weapons = this.weaponParser.parse(node);
             const player = this.loader.game.player;
             Object.keys(weapons).forEach((key) => {
                 const weaponInstance = new weapons[key];
                 player.weapons[weaponInstance.code] = weaponInstance;
             });
-        }
+        });
     }
 }
 
