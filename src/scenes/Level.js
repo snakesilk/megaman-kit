@@ -1,20 +1,20 @@
 const THREE = require('three');
-const {Keyboard, Scene, SyncPromise} = require('@snakesilk/engine');
+const {Keyboard, SyncPromise} = require('@snakesilk/engine');
 
-class Level extends Scene
+class Level
 {
-    constructor()
-    {
-        super();
+    constructor(scene) {
+        this.scene = scene;
 
         this.EVENT_PLAYER_RESET = 'player-reset';
         this.EVENT_PLAYER_DEATH = 'player-death';
 
         this.assets = {};
         this.player = null;
-        this.camera.camera.position.z = 150;
+        this.scene.camera.camera.position.z = 150;
 
         this.cameraFollowOffset = new THREE.Vector2(0, 25);
+
         this.checkPoints = [];
         this.checkPointIndex = 0;
         this.checkPointOffset = new THREE.Vector2(0, 200);
@@ -24,17 +24,17 @@ class Level extends Scene
 
         const onDeath = () => {
             --this.player.lives;
-            this.events.trigger(this.EVENT_PLAYER_DEATH);
-            this.waitFor(this.deathRespawnTime).then(() => {
+            this.scene.events.trigger(this.EVENT_PLAYER_DEATH);
+            this.scene.waitFor(this.deathRespawnTime).then(() => {
                 if (this.player.lives <= 0) {
-                    this.events.trigger(this.EVENT_END);
+                    this.scene.events.trigger(this.EVENT_END);
                 } else {
                     this.resetPlayer();
                 }
             });
         };
 
-        this.events.bind(this.EVENT_CREATE, (game) => {
+        this.scene.events.bind(this.scene.EVENT_CREATE, (game) => {
             this.inputs = {
                 character: this.createCharacterInput(game),
                 menu: this.createMenuInput(game),
@@ -46,37 +46,38 @@ class Level extends Scene
                 char.events.bind(char.health.EVENT_DEATH, onDeath);
             }
         });
-        this.events.bind(this.EVENT_DESTROY, () => {
+
+        this.scene.events.bind(this.scene.EVENT_DESTROY, () => {
             const char = this.player.character;
             if (char) {
                 char.events.unbind(char.health.EVENT_DEATH, onDeath);
             }
 
-            this.camera.unfollow();
-            this.world.objects.forEach(object => {
+            this.scene.camera.unfollow();
+            this.scene.world.objects.forEach(object => {
                 if (object !== undefined) {
-                    this.world.removeObject(object);
+                    this.scene.world.removeObject(object);
                 }
             });
         });
 
-        this.events.bind(this.EVENT_UPDATE_TIME, () => {
+        this.scene.events.bind(this.scene.EVENT_UPDATE_TIME, () => {
             this.detectCheckpoint();
         });
 
-        this.events.bind(this.EVENT_START, () => {
+        this.scene.events.bind(this.scene.EVENT_START, () => {
             this.resetPlayer()
         });
     }
-    addCheckPoint(x, y, r)
-    {
+
+    addCheckPoint(x, y, r) {
         this.checkPoints.push({
             'pos': new THREE.Vector2(x, y),
             'radius': r || 100,
         });
     }
-    createCharacterInput(game)
-    {
+
+    createCharacterInput(game) {
         const input = new Keyboard();
         const player = game.player;
 
@@ -134,18 +135,17 @@ class Level extends Scene
             });
         input.hit(input.SELECT,
             () => {
-                this.events.trigger(this.EVENT_END);
+                this.scene.events.trigger(this.EVENT_END);
             });
 
         return input;
     }
-    createMenuInput()
-    {
-        var input = new Keyboard;
-        return input;
+
+    createMenuInput() {
+        return new Keyboard();
     }
-    detectCheckpoint()
-    {
+
+    detectCheckpoint() {
         if (this.player.character) {
             const playerPosition = this.player.character.position;
             for (let i = 0, l = this.checkPoints.length; i !== l; ++i) {
@@ -157,70 +157,67 @@ class Level extends Scene
             }
         }
     }
-    followPlayer()
-    {
-        this.camera.follow(this.player.character,
-                           this.cameraFollowOffset);
+
+    followPlayer() {
+        this.scene.camera.follow(
+            this.player.character,
+            this.cameraFollowOffset);
     }
-    goToCheckpoint(index)
-    {
+
+    goToCheckpoint(index) {
         this.checkPointIndex = index;
         this.resetPlayer();
     }
-    readyBlink()
-    {
+
+    pauseGamePlay() {
+        this.scene.input = this.inputs.menu;
+        this.scene.pause();
+    }
+
+    resumeGamePlay() {
+        this.scene.input = this.inputs.character;
+        this.scene.resume();
+    }
+
+    readyBlink() {
         if (this.readyBlinkTime === 0 || !this.assets['start-caption']) {
             return SyncPromise.resolve();
         }
 
         const model = this.assets['start-caption'];
-        const camera = this.camera.camera;
+        const camera = this.scene.camera.camera;
         const interval = 9/60;
 
         model.visible = true;
-        this.world.scene.add(model);
+        this.scene.world.scene.add(model);
 
-        return this.doFor(this.readyBlinkTime, (elapsed) => {
+        return this.scene.doFor(this.readyBlinkTime, (elapsed) => {
             model.position.x = camera.position.x;
             model.position.y = camera.position.y;
             model.visible = elapsed % (interval * 2) < interval;
-        }).then(() => {
-            this.world.scene.remove(model);
+        })
+        .then(() => {
+            this.scene.world.scene.remove(model);
         });
     }
-    pauseGamePlay()
-    {
-        const world = this.world;
-        world.events.unbind(world.EVENT_SIMULATE, this.simulateListener);
 
-        this.input = this.inputs.menu;
-        this.pause();
-    }
-    resumeGamePlay()
-    {
-        const world = this.world;
-        world.events.bind(world.EVENT_SIMULATE, this.simulateListener);
-
-        this.input = this.inputs.character;
-        this.resume();
-    }
-    resetCheckpoint()
-    {
+    resetCheckpoint() {
         this.resetObjects();
-        return this.readyBlink().then(() => {
+        return this.readyBlink()
+        .then(() => {
             this.resumeGamePlay();
         });
     }
-    resetObjects()
-    {
-        this.world.objects.forEach(obj => {
+
+    resetObjects() {
+        this.scene.world.objects.forEach(obj => {
             if (obj) {
                 obj.reset();
             }
         });
     }
-    resetPlayer()
-    {
+
+    resetPlayer() {
         const player = this.player;
         const character = player.character;
         if (!character) {
@@ -231,7 +228,10 @@ class Level extends Scene
             player.equipWeapon(player.defaultWeapon);
         }
 
-        this.world.removeObject(character);
+        const scene = this.scene;
+        const {world, camera} = scene;
+
+        world.removeObject(character);
 
         character.reset();
         character.direction.set(character.DIRECTION_RIGHT, 0);
@@ -243,7 +243,6 @@ class Level extends Scene
             const playerPosition = checkpoint.pos.clone().add(this.checkPointOffset);
             const cameraPosition = checkpoint.pos.clone().add(this.cameraFollowOffset);
 
-            const camera = this.camera;
             camera.velocity.set(0, 0, 0);
             camera.unfollow();
             camera.jumpToPath(cameraPosition);
@@ -257,17 +256,17 @@ class Level extends Scene
             character.events.bind(character.teleport.EVENT_END, startFollow);
 
             this.resetCheckpoint().then(() => {
-                this.world.addObject(character);
+                world.addObject(character);
             });
         }
         else {
             character.moveTo(new THREE.Vector2(0, 0));
-            this.camera.follow(character);
-            this.world.addObject(character);
+            camera.follow(character);
+            world.addObject(character);
             this.resumeGamePlay();
         }
 
-        this.events.trigger(this.EVENT_PLAYER_RESET);
+        scene.events.trigger(this.EVENT_PLAYER_RESET);
     }
 }
 

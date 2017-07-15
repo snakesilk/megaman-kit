@@ -1,37 +1,33 @@
-const {Parser, Util: {ensure, find}} = require('@snakesilk/xml-loader');
+const {Parser, Util: {children, ensure, find}} = require('@snakesilk/xml-loader');
 const Spawner = require('@snakesilk/engine/dist/object/Spawner');
 const Level = require('../scenes/Level');
 
-class LevelParser extends Parser.SceneParser
+class LevelParser extends Parser
 {
+    constructor(loader) {
+        super(loader);
+        this.sceneParser = new Parser.SceneParser(loader);
+    }
+
     getScene(node) {
-        ensure(node, 'scene');
+        ensure(node, 'level');
 
-        const context = this.createContext(new Level());
+        const sceneNode = children(node, 'scene')[0];
+        return this.sceneParser.getScene(sceneNode)
+        .then(context => {
+            const level = new Level(context.scene);
+            this.parseCheckpoints(node, level);
+            this.parseMusic(node, context, level);
+            this.parseSpawners(node, context);
+            this.parseText(node, level);
+            this.parseScripts(node, context);
 
-        this._parseAudio(node, context);
-        this._parseEvents(node, context);
-        this._parseMusic(node, context);
-        this._parseBehaviors(node, context);
-        this._parseCamera(node, context);
-        this._parseCheckpoints(node, context);
-        this._parseGravity(node, context);
-        this._parseSequences(node, context);
-        this._parseSpawners(node, context);
-        this._parseText(node, context);
-
-        return this._parseObjects(node, context).then(() => {
-            return this._parseLayout(node, context);
-        }).then(() => {
-            return this._parseScripts(node, context);
-        }).then(() => {
-            return this.loader.resourceLoader.complete();
-        }).then(() => {
-            return context;
+            return this.loader.resourceLoader.complete()
+            .then(() => context);
         });
     }
 
-    _parseCheckpoints(node, {scene: level}) {
+    parseCheckpoints(node, level) {
         const checkpointNodes = find(node, 'checkpoints > checkpoint');
         for (let checkpointNode, i = 0; checkpointNode = checkpointNodes[i]; ++i) {
             const p = this.getPosition(checkpointNode);
@@ -40,16 +36,16 @@ class LevelParser extends Parser.SceneParser
         }
     }
 
-    _parseMusic(node, {scene}) {
+    parseMusic(node, {scene}, level) {
         const nodes = find(node, 'music > *');
         for (let node, i = 0; node = nodes[i]; ++i) {
             const type = node.tagName;
             const id = this.getAttr(node, 'id')
             if (type === 'level') {
-                scene.events.bind(scene.EVENT_PLAYER_RESET, function() {
+                scene.events.bind(level.EVENT_PLAYER_RESET, function() {
                     this.audio.play(id);
                 });
-                scene.events.bind(scene.EVENT_PLAYER_DEATH, function() {
+                scene.events.bind(level.EVENT_PLAYER_DEATH, function() {
                     this.audio.stop(id);
                 });
             } else if (type === 'boss') {
@@ -58,7 +54,7 @@ class LevelParser extends Parser.SceneParser
         }
     }
 
-    _parseSpawners(node, {scene}) {
+    parseSpawners(node, {scene}) {
         const world = scene.world;
         const spawnerNodes = find(node, 'layout > spawner');
         for (let spawnerNode, i = 0; spawnerNode = spawnerNodes[i]; ++i) {
@@ -85,7 +81,7 @@ class LevelParser extends Parser.SceneParser
         return Promise.resolve();
     }
 
-    _parseScripts(node, {scene: level}) {
+    parseScripts(node, {scene: level}) {
         const scriptNodes = find(node, 'scripts > *');
         for (let scriptNode, i = 0; scriptNode = scriptNodes[i++];) {
             const type = scriptNode.tagName;
@@ -98,10 +94,10 @@ class LevelParser extends Parser.SceneParser
         }
     }
 
-    _parseText(node, {scene}) {
+    parseText(node, level) {
         const res = this.loader.resourceManager;
         if (res.has('font', 'nintendo')) {
-            scene.assets['start-caption'] = res.get('font', 'nintendo')('READY').createMesh();
+            level.assets['start-caption'] = res.get('font', 'nintendo')('READY').createMesh();
         }
     }
 }
