@@ -1,4 +1,4 @@
-const {XMLLoader, Parser: {ObjectParser}} = require('@snakesilk/xml-loader');
+const {XMLLoader, Parser} = require('@snakesilk/xml-loader');
 
 const GameParser = require('../parsers/GameParser');
 const StageSelectParser = require('../parsers/StageSelectParser');
@@ -9,8 +9,10 @@ class MegamanLoader extends XMLLoader
     constructor(game) {
         super(game);
 
+        this.gameParser = new GameParser(this);
         this.levelParser = new LevelParser(this);
         this.stageSelectParser = new StageSelectParser(this);
+        this.sceneParser = new Parser.SceneParser(this);
 
         this.entryPoint = null;
         this.sceneIndex = {};
@@ -19,9 +21,14 @@ class MegamanLoader extends XMLLoader
     loadGame(url) {
         return this.asyncLoadXML(url).then(doc => {
             const node = doc.querySelector('game');
-            const parser = new GameParser(this, node);
-            return parser.parse();
+            return this.gameParser.parseGame(node);
         });
+    }
+
+    loadScene(url) {
+        return this.asyncLoadXML(url)
+        .then(doc => this.parseScene(doc.children[0]))
+        .then(context => context.scene);
     }
 
     loadSceneByName(name) {
@@ -29,28 +36,20 @@ class MegamanLoader extends XMLLoader
             throw new Error(`Scene "${name}" does not exist.`);
         }
 
-        return this.loadScene(this.sceneIndex[name].url)
-        .then(({scene}) => scene);
+        return this.loadScene(this.sceneIndex[name].url);
     }
 
     parseScene(node) {
-        if (node.tagName !== 'scene') {
-            throw new TypeError('Node not <scene>');
+        const type = node.tagName;
+        if (type === 'level') {
+            return this.levelParser.getScene(node);
+        } else if (type === 'stage-select') {
+            return this.stageSelectParser.getScene(node);
+        } else if (type === 'scene') {
+            return this.sceneParser.getScene(node);
         }
 
-        const type = node.getAttribute('type');
-        if (type) {
-            if (type === 'level') {
-                return this.levelParser.getScene(node);
-            } else if (type === 'stage-select') {
-                return this.stageSelectParser.getScene(node);
-            } else {
-                throw new Error(`Scene type "${type}" not recognized`);
-            }
-
-        } else {
-            return super.parseScene(node);
-        }
+        throw new Error(`Scene type "${type}" not recognized`);
     }
 }
 
