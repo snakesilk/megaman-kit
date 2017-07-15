@@ -14,8 +14,13 @@ function readXMLFile(file) {
 const file = process.argv[2];
 const document = readXMLFile(file);
 
-const levelNode = document.createElement('level');
 const sceneNode = document.getElementsByTagName('scene')[0];
+if (sceneNode.getAttribute('type') !== 'level') {
+    process.stderr.write('<scene> not a type="level"');
+    process.exit(1);
+}
+
+const levelNode = document.createElement('level');
 sceneNode.removeAttribute('type');
 levelNode.appendChild(sceneNode);
 levelNode.insertBefore(sceneNode.getElementsByTagName('checkpoints')[0], sceneNode);
