@@ -3,17 +3,28 @@ const sinon = require('sinon');
 
 const Mocks = require('@snakesilk/testing/mocks');
 
-const {Game, Entity} = require('@snakesilk/engine');
+const {Game, Entity, Scene} = require('@snakesilk/engine');
 const {Health} = require('@snakesilk/platform-traits');
 const {Teleport} = require('@snakesilk/megaman-traits');
 
 const Level = require('../Level');
 
 describe('Level', function() {
+  let level, scene;
+
   beforeEach(() => {
       Mocks.AudioContext.mock();
       Mocks.THREE.WebGLRenderer.mock();
       Mocks.requestAnimationFrame.mock();
+
+      scene = new Scene();
+      level = new Level(scene);
+      const game = new Game();
+      const character = new Entity;
+      character.applyTrait(new Health());
+      character.applyTrait(new Teleport());
+      game.player.setCharacter(character);
+      scene.events.trigger(scene.EVENT_CREATE, [game]);
   });
 
   afterEach(() => {
@@ -22,68 +33,53 @@ describe('Level', function() {
       Mocks.requestAnimationFrame.restore();
   });
 
-  function createLevel() {
-      const level = new Level();
-      const game = new Game();
-      const character = new Entity;
-      character.applyTrait(new Health);
-      character.applyTrait(new Teleport);
-      game.player.setCharacter(character);
-      level.events.trigger(level.EVENT_CREATE, [game]);;
-      return level;
-  }
-
   it('should decrease player lives if player dies', function() {
-    const level = createLevel();
-    level.world.addObject(level.player.character);
+    level.scene.world.addObject(level.player.character);
     level.player.lives = 3;
     level.player.character.health.kill();
     expect(level.player.lives).to.equal(2);
   });
 
   it('should run resetPlayer 4 seconds after death if lives > 1', function(done) {
-    const level = createLevel();
-    sinon.stub(level, 'resetPlayer', function() {
+    sinon.stub(level, 'resetPlayer').callsFake(function() {
       try {
-        expect(level.world._timeTotal).to.be.within(4, 4.01);
+        expect(scene.world._timeTotal).to.be.within(4, 4.01);
         done();
       } catch (e) {
         done(e);
       }
     });
-    level.world.addObject(level.player.character);
+    scene.world.addObject(level.player.character);
     level.player.lives = 2;
     level.player.character.health.kill();
-    level.world.updateTime(5);
+    scene.world.updateTime(5);
   });
 
   it('should emit end event 4 seconds after death if lives <= 1', function(done) {
-    const level = createLevel();
     const endEventSpy = sinon.spy(function() {
       try {
-        expect(level.world._timeTotal).to.be.within(4, 4.01);
+        expect(scene.world._timeTotal).to.be.within(4, 4.01);
         done();
       } catch (e) {
         done(e);
       }
     });
-    level.events.bind(level.EVENT_END, endEventSpy);
-    level.world.addObject(level.player.character);
+    scene.events.bind(scene.EVENT_END, endEventSpy);
+    scene.world.addObject(level.player.character);
     level.player.lives = 1;
     level.player.character.health.kill();
-    level.world.updateTime(5);
+    scene.world.updateTime(5);
   });
 
   describe('#resetObjects', function() {
     it('should run reset function on every trait of every object if available', function() {
-      const level = createLevel();
       const thing = new Entity();
       const resetSpy = sinon.spy();
       thing.traits = [
         { reset: resetSpy },
         { dummy: null },
       ];
-      level.world.addObject(thing);
+      scene.world.addObject(thing);
       level.resetObjects();
       expect(resetSpy.callCount).to.be(1);
     });
@@ -91,7 +87,6 @@ describe('Level', function() {
 
   describe('#resetPlayer()', function() {
     it('should run reset on player', function() {
-      const level = createLevel();
       const character = new Entity;
       character.reset = sinon.spy();
       level.player = { character };
@@ -100,7 +95,6 @@ describe('Level', function() {
     });
 
     it('should put player on last checkpoint + offset', function() {
-      const level = createLevel();
       level.checkPointOffset.set(0, 200);
       level.addCheckPoint(135, 345, 0);
       level.addCheckPoint(1243, 1211, 0);
@@ -117,7 +111,6 @@ describe('Level', function() {
     });
 
     it('should activate a teleportation from checkpoint + offset', function(done) {
-      const level = createLevel();
       level.checkPointOffset.set(0, 200);
       level.readyBlinkTime = 0;
       level.addCheckPoint(300, 100, 0);
@@ -134,7 +127,6 @@ describe('Level', function() {
     });
 
     it('should teleport to checkpoint', function(done) {
-      const level = createLevel();
       level.checkPointOffset.set(0, 200);
       level.readyBlinkTime = 0;
       level.addCheckPoint(300, 100, 0);
@@ -149,7 +141,7 @@ describe('Level', function() {
       level.resetPlayer();
 
       setTimeout(function() {
-        level.world.updateTime(1);
+        scene.world.updateTime(1);
       }, 0);
     });
   });

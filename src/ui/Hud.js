@@ -64,28 +64,20 @@ class Hud
     }
     onSceneSet(scene)
     {
-        if (scene instanceof Level) {
-            scene.events.bind(scene.EVENT_PLAYER_RESET, this.showHud);
-            scene.events.bind(scene.EVENT_PLAYER_DEATH, this.hideHud);
-            const player = scene.player.character;
-            if (player) {
-                player.events.bind(player.health.EVENT_HEALTH_CHANGED, this.onHealthChanged);
-                player.events.bind(player.weapon.EVENT_EQUIP, this.onWeaponEquip);
-            }
-        }
+        scene.events.bind(Level.EVENT_PLAYER_RESET, this.showHud);
+        scene.events.bind(Level.EVENT_PLAYER_DEATH, this.hideHud);
+        const player = this.game.player.character;
+        player.events.bind(player.health.EVENT_HEALTH_CHANGED, this.onHealthChanged);
+        player.events.bind(player.weapon.EVENT_EQUIP, this.onWeaponEquip);
     }
     onSceneUnset(scene)
     {
-        if (scene instanceof Level) {
-            scene.events.unbind(scene.EVENT_PLAYER_RESET, this.showHud);
-            scene.events.unbind(scene.EVENT_PLAYER_DEATH, this.hideHud);
-            const player = scene.player.character;
-            if (player) {
-                player.events.unbind(player.health.EVENT_HEALTH_CHANGED, this.onHealthChanged);
-                player.events.unbind(player.weapon.EVENT_EQUIP, this.onWeaponEquip);
-            }
-            this.hideHud();
-        }
+        scene.events.unbind(Level.EVENT_PLAYER_RESET, this.showHud);
+        scene.events.unbind(Level.EVENT_PLAYER_DEATH, this.hideHud);
+        const player = this.game.player.character;
+        player.events.unbind(player.health.EVENT_HEALTH_CHANGED, this.onHealthChanged);
+        player.events.unbind(player.weapon.EVENT_EQUIP, this.onWeaponEquip);
+        this.hideHud();
     }
     onWeaponEquip(weapon)
     {
