@@ -20,7 +20,6 @@ class LevelParser extends Parser
             this.parseMusic(node, context, level);
             this.parseSpawners(node, context);
             this.parseText(node, level);
-            this.parseScripts(node, context);
 
             return this.loader.resourceLoader.complete()
             .then(() => context);
@@ -79,19 +78,6 @@ class LevelParser extends Parser
             world.addObject(spawner);
         }
         return Promise.resolve();
-    }
-
-    parseScripts(node, {scene: level}) {
-        const scriptNodes = find(node, 'scripts > *');
-        for (let scriptNode, i = 0; scriptNode = scriptNodes[i++];) {
-            const type = scriptNode.tagName;
-            const func = eval(scriptNode.textContent);
-            if (typeof func === "function") {
-                if (type === 'bootstrap') {
-                    func(scene);
-                }
-            }
-        }
     }
 
     parseText(node, level) {
