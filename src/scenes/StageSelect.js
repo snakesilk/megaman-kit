@@ -15,11 +15,6 @@ class StageSelect
         this._state = {};
 
         this.animations = {};
-        this.scene.camera.camera.position.z = 120;
-        this.cameraDesiredPosition = new Vector3();
-        this.cameraDistance = 140;
-        this.cameraSmoothing = 20;
-        this.captionOffset = new Vector3(0, -32, .2);
         this.currentIndex = undefined;
         this.initialIndex = 0;
         this.indicator = null;
@@ -27,7 +22,7 @@ class StageSelect
         this.podium = undefined;
         this.stages = [];
         this.stars = [];
-        this.rowLength = 3;
+        this.rowLength = undefined;
         this.spacing = new Vector2(64, 64);
         this.starSpeed = 200;
 
@@ -49,63 +44,68 @@ class StageSelect
             this.enter();
         });
 
-        const simulate = (dt) => {
-            this.update(dt);
-        };
+        this.update = this.update.bind(this);
 
         this.modifiers = new Set();
 
         this.scene.events.bind(this.scene.EVENT_CREATE, (game) => {
-            this.equalize(this.initialIndex);
+            this.selectIndex(this.initialIndex);
             this.modifiers.clear();
-            this.animations = {
-                'flash': this.createFlashAnimation(),
-                'indicator': this.createIndicatorAnimation(),
-                'stars': this.createStarAnimation(game.renderer.domElement),
-            };
-            /*if (game.state) {
-
-            }*/
         });
 
         this.scene.events.bind(this.scene.EVENT_START, () => {
-            this.scene.world.events.bind(this.scene.world.EVENT_SIMULATE, simulate);
-            this.scene.camera.panTo(this.cameraDesiredPosition, 1, Easing.easeOutQuad());
+            this.scene.world.events.bind(this.scene.world.EVENT_SIMULATE, this.update);
             this.enableIndicator();
             this.scene.input.enable();
         });
 
         this.scene.events.bind(this.scene.EVENT_DESTROY, () => {
-            this.scene.world.events.unbind(this.scene.world.EVENT_SIMULATE, simulate);
+            this.scene.world.events.unbind(this.scene.world.EVENT_SIMULATE, this.update);
         });
     }
 
-    addStage(avatar, caption, name, character) {
-        const x = this.stages.length % this.rowLength;
-        const y = Math.floor(this.stages.length / this.rowLength);
-
-        const pos = new Vector2(this.spacing.x * x, -this.spacing.y * y);
-        const frame = this.frame.clone();
-
-        this.stages.push({
-            "avatar": avatar,
-            "name": name,
-            "caption": caption,
-            "frame": frame,
-            "character": character,
-        });
-
-        frame.position.set(pos.x, pos.y, 0);
-        avatar.position.set(pos.x, pos.y, .1);
-        caption.position.copy(avatar.position);
-        caption.position.add(this.captionOffset);
-        this.scene.world.scene.add(frame);
-        this.scene.world.scene.add(avatar);
-        this.scene.world.scene.add(caption);
+    addStage(stage) {
+        const {avatar, frame, caption} = stage;
+        this.scene.world.addObject(frame);
+        this.scene.world.addObject(avatar);
+        this.scene.world.addObject(caption);
+        this.stages.push(stage);
     }
 
     addStar(model) {
         this.stars.push(model);
+    }
+
+    initialize() {
+        this.rowLength = Math.ceil(Math.sqrt(this.stages.length));
+
+        const positions = this.stages.map((stage, index) => {
+            const x = index % this.rowLength;
+            const y = Math.floor(index / this.rowLength);
+            return new Vector2(this.spacing.x * x, -this.spacing.y * y);
+        });
+
+        const xs = positions.map(p => p.x);
+        const ys = positions.map(p => p.y);
+
+        const offset = new Vector3(
+            -(Math.max(...xs) - Math.min(...xs)) / 2,
+            (Math.max(...ys) - Math.min(...ys)) / 2,
+            0);
+
+        /* Increase Y pos to account for caption. */
+        offset.y += 8;
+
+        this.stages.forEach(({avatar, caption, frame}, index) => {
+            const pos = positions[index];
+            frame.position.set(pos.x, pos.y, 0).add(offset);
+            avatar.position.copy(frame.position);
+            caption.position.copy(frame.position);
+            caption.position.y -= 32;
+        });
+
+        this.indicator = this.scene.world.getObject('indicator');
+        this.indicatorBlink = this.createBlinker(this.indicatorInterval * 2, this.indicator.model);
     }
 
     createFlashAnimation() {
@@ -141,31 +141,29 @@ class StageSelect
         }
     }
 
-    createIndicatorAnimation() {
-        const interval = this.indicatorInterval * 2;
-        const indicator = this.indicator;
+    createBlinker(interval, model) {
         let time = 0;
         return (dt) => {
             if (dt === -1) {
                 time = 0;
-                indicator.visible = false;
+                model.visible = false;
             } else {
                 time += dt;
             }
-            indicator.visible = (time % interval) / interval < .5;
+            model.visible = (time % interval) / interval < .5;
         }
     }
 
-    createStarAnimation(viewport) {
+    createStarAnimation() {
         const scene = this.scene.world.scene;
         const spread = 160;
-        const center = this.bossRevealCenter;
+        const center = this.scene.world.getObject('podium').position.clone();
         const camera = this.scene.camera.camera;
-        const aspect = viewport.width / viewport.height;
+        const aspect = 16/9;
 
         this.stars.forEach(star => {
             const vFOV = camera.fov * Math.PI / 180;
-            const h = 2 * Math.tan(vFOV / 2) * Math.abs(this.cameraDistance - star.position.z);
+            const h = 2 * Math.tan(vFOV / 2) * Math.abs(this.scene.camera.position.z - star.position.z);
             const w = h * aspect;
             star.position.x = center.x + (Math.random() * w) - w / 2;
             star.position.y = center.y + (Math.random() * h) - h / 2;
@@ -183,44 +181,8 @@ class StageSelect
                     star.position.y = star.userData.minY + Math.random() * Math.abs(star.userData.minY - star.userData.maxY);
                 }
                 star.position.x += this.starSpeed * dt;
-
             });
         }
-    }
-
-    equalize(index) {
-        if (!this.stages[index]) {
-            index = 0;
-        }
-
-        const center = new Vector3();
-        center.x = this.stages[0].avatar.position.x
-                 + this.stages[this.rowLength - 1].avatar.position.x;
-        center.x /= 2;
-
-        center.y = this.stages[0].avatar.position.y
-                 + this.stages[this.stages.length - 1].avatar.position.y;
-        center.y /= 2;
-        center.y -= 8; // Adjust for caption.
-
-        if (this.podium) {
-            this.podium.position.copy(center);
-            this.podium.position.y += 512;
-            this.podiumSolid.position.copy(this.podium.position);
-            this.podiumSolid.position.y -= 24;
-        }
-
-        this.stageSelectCenter = center.clone();
-        this.stageSelectCenter.z += this.cameraDistance;
-        this.bossRevealCenter = this.podium.position.clone();
-        this.bossRevealCenter.z += this.cameraDistance;
-
-        this.cameraDesiredPosition.copy(this.stageSelectCenter);
-        this.scene.camera.position.copy(center);
-        this.scene.camera.position.z = this.cameraDesiredPosition.z - 100;
-
-        this.selectIndex(index);
-        this.scene.world.getObject('background').position.copy(center);
     }
 
     enter() {
@@ -244,10 +206,10 @@ class StageSelect
     }
 
     runFlash() {
-        this.modifiers.add(this.animations.flash);
+        const flash = this.createFlashAnimation();
+        this.modifiers.add(flash);
         return this.scene.waitFor(1.0).then(() => {
-            this.modifiers.delete(this.animations.flash);
-            this.animations.flash(-1);
+            this.modifiers.delete(flash);
         });
     }
 
@@ -265,36 +227,44 @@ class StageSelect
             this.scene.world.removeObject(state.currentBoss);
         }
 
+        const podium = this.scene.world.getObject('podium');
+
         const scene = this.scene;
         const camera = scene.camera;
         const character = new stage.character();
         character.direction.x = -1;
-        character.position.copy(this.podium.position);
+        character.position.copy(podium.position);
         character.position.y += 150;
 
-        this.modifiers.add(this.animations.stars);
-
         scene.events.trigger(this.EVENT_BOSS_REVEAL, [stage]);
+        state.currentBoss = character;
         scene.waitFor(.5).then(() => {
-            state.currentBoss = character;
+
             scene.world.addObject(character);
         });
 
+        const stars = this.createStarAnimation();
+        this.modifiers.add(stars);
+
         return camera.panTo(
-            this.bossRevealCenter,
+            new Vector2().copy(podium.position),
             1,
             Easing.easeInOutCubic()
         )
-        .then(() => scene.waitFor(6));
+        .then(() => scene.waitFor(6))
+        .then(() => this.modifiers.delete(stars))
     }
 
     selectIndex(index) {
         if (!this.stages[index]) {
             return false;
         }
-        const avatar = this.stages[index].avatar;
-        this.indicator.position.x = avatar.position.x;
-        this.indicator.position.y = avatar.position.y;
+
+        const pos = this.stages[index].avatar.position;
+
+        this.indicator.position.x = pos.x;
+        this.indicator.position.y = pos.y;
+
         if (this.animations.indicator) {
             this.animations.indicator(-1);
         }
@@ -304,35 +274,13 @@ class StageSelect
         return this.currentIndex;
     }
 
-    setFrame(model) {
-        this.frame = model;
-    }
-
     disableIndicator() {
-        this.animations.indicator(-1);
-        this.modifiers.delete(this.animations.indicator);
+        this.indicatorBlink(-1);
+        this.modifiers.delete(this.indicatorBlink);
     }
 
     enableIndicator() {
-        this.modifiers.add(this.animations.indicator);
-    }
-
-    setIndicator(model) {
-        this.indicator = model;
-        this.indicator.position.z = .1;
-        this.scene.world.scene.add(model);
-    }
-
-    setPodium(model) {
-        this.podium = model;
-        this.scene.world.scene.add(model);
-        const solid = new Entity();
-        solid.addCollisionRect(64, 16);
-        solid.applyTrait(new Solid());
-        solid.solid.fixed = true;
-        solid.solid.obstructs = true;
-        this.podiumSolid = solid;
-        this.scene.world.addObject(solid);
+        this.modifiers.add(this.indicatorBlink);
     }
 
     steer(x, y) {
