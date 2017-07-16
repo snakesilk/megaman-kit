@@ -46,7 +46,6 @@ class StageSelectParser extends Parser
         const {scene} = context;
         const res = this.loader.resourceManager;
 
-        const backgroundNode = node.querySelector('background');
         const cameraNode = node.querySelector('camera');
         const fontNode = node.querySelector('font');
         const indicatorNode = node.querySelector('indicator');
@@ -54,7 +53,6 @@ class StageSelectParser extends Parser
 
         const fontId = fontNode.getAttribute('id');
 
-        stageSelect.setBackgroundColor(this.getAttr(backgroundNode, 'color'));
         stageSelect.setBackgroundModel(context.createEntity('background').model);
         stageSelect.setIndicator(context.createEntity('indicator').model);
         stageSelect.setFrame(context.createEntity('frame').model);
