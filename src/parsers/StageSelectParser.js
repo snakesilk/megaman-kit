@@ -35,11 +35,11 @@ class StageSelectParser extends Parser
         });
     }
 
-    createCaption(text) {
+    createCaption(text, fontId) {
         text = text.split(" ");
         text[1] = fill(" ", 6 - text[1].length) + text[1];
         text = text.join("\n");
-        return this.loader.resourceManager.get('font', 'nintendo')(text).createMesh();
+        return this.loader.resourceManager.get('font', fontId)(text).createMesh();
     }
 
     parseLayout(node, context, stageSelect) {
@@ -73,7 +73,7 @@ class StageSelectParser extends Parser
             const id = this.getAttr(stageNode, 'id')
             const name = this.getAttr(stageNode, 'name');
             const text = this.getAttr(stageNode, 'caption');
-            const caption = this.createCaption(text);
+            const caption = this.createCaption(text, 'nintendo');
             const avatar = context.createEntity(id).model;
             const characterId = this.getAttr(stageNode, 'character');
             stageSelect.addStage(avatar, caption, name, characterId && res.get('entity', characterId));
