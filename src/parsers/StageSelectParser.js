@@ -27,22 +27,22 @@ class StageSelectParser extends Parser
         return this.sceneParser.getScene(sceneNode)
         .then(context => {
             const stageSelect = new StageSelect(context.scene);
-            this._setupBehavior(node, context, stageSelect);
-            this._parseReveal(node, context, stageSelect);
-            this._parseLayout(node, context, stageSelect);
+            this.setupBehavior(node, context, stageSelect);
+            this.parseReveal(node, context, stageSelect);
+            this.parseLayout(node, context, stageSelect);
             return this.loader.resourceLoader.complete()
             .then(() => context);
         });
     }
 
-    _createCaption(text) {
+    createCaption(text) {
         text = text.split(" ");
         text[1] = fill(" ", 6 - text[1].length) + text[1];
         text = text.join("\n");
         return this.loader.resourceManager.get('font', 'nintendo')(text).createMesh();
     }
 
-    _parseLayout(node, context, stageSelect) {
+    parseLayout(node, context, stageSelect) {
         const sceneNode = node;
         const {scene} = context;
         const res = this.loader.resourceManager;
@@ -73,7 +73,7 @@ class StageSelectParser extends Parser
             const id = this.getAttr(stageNode, 'id')
             const name = this.getAttr(stageNode, 'name');
             const text = this.getAttr(stageNode, 'caption');
-            const caption = this._createCaption(text);
+            const caption = this.createCaption(text);
             const avatar = context.createEntity(id).model;
             const characterId = this.getAttr(stageNode, 'character');
             stageSelect.addStage(avatar, caption, name, characterId && res.get('entity', characterId));
@@ -83,7 +83,7 @@ class StageSelectParser extends Parser
         stageSelect.initialIndex = initialIndex;
     }
 
-    _parseReveal(node, context, stageSelect) {
+    parseReveal(node, context, stageSelect) {
         const starNodes = node.querySelectorAll(':scope > layout > stars > star');
         for (let node, i = 0; node = starNodes[i]; ++i) {
             const id = this.getAttr(node, 'object');
@@ -103,7 +103,7 @@ class StageSelectParser extends Parser
         }
     }
 
-    _setupBehavior(node, {scene}, stageSelect) {
+    setupBehavior(node, {scene}, stageSelect) {
         /*
         Bind action to load a stage to stage select event
         and on the loading of the next scene bind to re-enter
