@@ -53,7 +53,6 @@ class StageSelectParser extends Parser
 
         const fontId = fontNode.getAttribute('id');
 
-        stageSelect.setBackgroundModel(context.createEntity('background').model);
         stageSelect.setIndicator(context.createEntity('indicator').model);
         stageSelect.setFrame(context.createEntity('frame').model);
 

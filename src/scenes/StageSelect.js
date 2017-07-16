@@ -31,8 +31,6 @@ class StageSelect
         this.spacing = new THREE.Vector2(64, 64);
         this.starSpeed = 200;
 
-        this.backgroundModel = undefined;
-
         const input = this.scene.input;
         input.disable();
         input.hit(input.LEFT, () => {
@@ -222,8 +220,7 @@ class StageSelect
         this.scene.camera.position.z = this.cameraDesiredPosition.z - 100;
 
         this.selectIndex(index);
-        this.backgroundModel.position.copy(center);
-        this.backgroundModel.position.copy(center);
+        this.scene.world.getObject('background').position.copy(center);
     }
 
     enter() {
@@ -303,14 +300,6 @@ class StageSelect
         this.currentIndex = index;
 
         return this.currentIndex;
-    }
-
-    setBackgroundModel(model) {
-        if (this.backgroundModel) {
-            this.scene.world.scene.remove(this.backgroundModel);
-        }
-        this.backgroundModel = model;
-        this.scene.world.scene.add(model);
     }
 
     setFrame(model) {
