@@ -48,8 +48,11 @@ class StageSelectParser extends Parser
 
         const backgroundNode = node.querySelector('background');
         const cameraNode = node.querySelector('camera');
+        const fontNode = node.querySelector('font');
         const indicatorNode = node.querySelector('indicator');
         const spacingNode = node.querySelector('spacing');
+
+        const fontId = fontNode.getAttribute('id');
 
         stageSelect.setBackgroundColor(this.getAttr(backgroundNode, 'color'));
         stageSelect.setBackgroundModel(context.createEntity('background').model);
@@ -72,7 +75,7 @@ class StageSelectParser extends Parser
             const id = this.getAttr(stageNode, 'id')
             const name = this.getAttr(stageNode, 'name');
             const text = this.getAttr(stageNode, 'caption');
-            const caption = this.createCaption(text, 'nintendo');
+            const caption = this.createCaption(text, fontId);
             const avatar = context.createEntity(id).model;
             const characterId = this.getAttr(stageNode, 'character');
             stageSelect.addStage(avatar, caption, name, characterId && res.get('entity', characterId));
