@@ -230,14 +230,12 @@ class StageSelect
 
         const stage = this.getSelected();
         this.scene.events.trigger(this.EVENT_STAGE_SELECTED, [stage]);
-        this.runFlash().then(() => {
-            if (stage.character) {
-                return this.runBossReveal(stage).then(() => {
-                    this.scene.events.trigger(this.EVENT_STAGE_ENTER, [stage]);
-                });
-            } else {
-                this.scene.events.trigger(this.EVENT_STAGE_ENTER, [stage]);
-            }
+        this.runFlash()
+        .then(() => this.runBossReveal(stage))
+        .then(() => {
+            this.scene.events.trigger(
+                this.EVENT_STAGE_ENTER,
+                [stage]);
         });
     }
 
@@ -254,6 +252,10 @@ class StageSelect
     }
 
     runBossReveal(stage) {
+        if (!stage.character) {
+            return Promise.resolve();
+        }
+
         if (!this._state.bossReveal) {
             this._state.bossReveal = {};
         }
