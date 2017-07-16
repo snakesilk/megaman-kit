@@ -105,7 +105,6 @@ class StageSelect
         });
 
         this.indicator = this.scene.world.getObject('indicator');
-        this.indicatorBlink = this.createBlinker(this.indicatorInterval * 2, this.indicator.model);
     }
 
     createFlashAnimation() {
@@ -138,19 +137,6 @@ class StageSelect
                     on();
                 }
             }
-        }
-    }
-
-    createBlinker(interval, model) {
-        let time = 0;
-        return (dt) => {
-            if (dt === -1) {
-                time = 0;
-                model.visible = false;
-            } else {
-                time += dt;
-            }
-            model.visible = (time % interval) / interval < .5;
         }
     }
 
@@ -265,9 +251,7 @@ class StageSelect
         this.indicator.position.x = pos.x;
         this.indicator.position.y = pos.y;
 
-        if (this.animations.indicator) {
-            this.animations.indicator(-1);
-        }
+        this.indicator.blink.reset();
 
         this.currentIndex = index;
 
@@ -275,12 +259,12 @@ class StageSelect
     }
 
     disableIndicator() {
-        this.indicatorBlink(-1);
-        this.modifiers.delete(this.indicatorBlink);
+        this.scene.world.removeObject(this.indicator);
     }
 
     enableIndicator() {
-        this.modifiers.add(this.indicatorBlink);
+        this.indicator.blink.reset();
+        this.scene.world.addObject(this.indicator);
     }
 
     steer(x, y) {
