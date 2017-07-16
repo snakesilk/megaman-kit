@@ -1,4 +1,4 @@
-const THREE = require('three');
+const {Vector2, Vector3} = require('three');
 const {Easing, Entity} = require('@snakesilk/engine');
 const {Solid} = require('@snakesilk/platform-traits');
 
@@ -16,10 +16,10 @@ class StageSelect
 
         this.animations = {};
         this.scene.camera.camera.position.z = 120;
-        this.cameraDesiredPosition = new THREE.Vector3();
+        this.cameraDesiredPosition = new Vector3();
         this.cameraDistance = 140;
         this.cameraSmoothing = 20;
-        this.captionOffset = new THREE.Vector3(0, -32, .2);
+        this.captionOffset = new Vector3(0, -32, .2);
         this.currentIndex = undefined;
         this.initialIndex = 0;
         this.indicator = null;
@@ -28,7 +28,7 @@ class StageSelect
         this.stages = [];
         this.stars = [];
         this.rowLength = 3;
-        this.spacing = new THREE.Vector2(64, 64);
+        this.spacing = new Vector2(64, 64);
         this.starSpeed = 200;
 
         const input = this.scene.input;
@@ -84,7 +84,7 @@ class StageSelect
         const x = this.stages.length % this.rowLength;
         const y = Math.floor(this.stages.length / this.rowLength);
 
-        const pos = new THREE.Vector2(this.spacing.x * x, -this.spacing.y * y);
+        const pos = new Vector2(this.spacing.x * x, -this.spacing.y * y);
         const frame = this.frame.clone();
 
         this.stages.push({
@@ -193,7 +193,7 @@ class StageSelect
             index = 0;
         }
 
-        const center = new THREE.Vector3();
+        const center = new Vector3();
         center.x = this.stages[0].avatar.position.x
                  + this.stages[this.rowLength - 1].avatar.position.x;
         center.x /= 2;
