@@ -1,17 +1,6 @@
 const {Parser, Util: {children, ensure}} = require('@snakesilk/xml-loader');
 const StageSelect = require('../scenes/StageSelect');
 
-function fill(x, n) {
-    let s = '';
-    for (;;) {
-        if (n & 1) s += x;
-        n >>= 1;
-        if (n) x += x;
-        else break;
-    }
-    return s;
-}
-
 class StageSelectParser extends Parser
 {
     constructor(loader) {
@@ -29,57 +18,43 @@ class StageSelectParser extends Parser
             const stageSelect = new StageSelect(context.scene);
             this.setupBehavior(node, context, stageSelect);
             this.parseReveal(node, context, stageSelect);
-            this.parseLayout(node, context, stageSelect);
+            this.parseIndicator(node, context, stageSelect);
+            this.parseStages(node, context, stageSelect);
+            stageSelect.initialize();
             return this.loader.resourceLoader.complete()
             .then(() => context);
         });
     }
 
-    createCaption(text, fontId) {
-        text = text.split(" ");
-        text[1] = fill(" ", 6 - text[1].length) + text[1];
-        text = text.join("\n");
-        return this.loader.resourceManager.get('font', fontId)(text).createMesh();
+    parseIndicator(node, context, stageSelect) {
+        const indicatorNode = node.querySelector('indicator');
+        stageSelect.indicatorInterval = this.getFloat(indicatorNode, 'blink-interval');
+        stageSelect.initialIndex = this.getInt(indicatorNode, 'initial-index') || 0;
     }
 
-    parseLayout(node, context, stageSelect) {
+    parseStages(node, context, stageSelect) {
         const {scene} = context;
-        const res = this.loader.resourceManager;
 
-        const cameraNode = node.querySelector('camera');
-        const fontNode = node.querySelector('font');
-        const indicatorNode = node.querySelector('indicator');
         const spacingNode = node.querySelector('spacing');
+        stageSelect.spacing.copy(this.getVector2(spacingNode));
 
-        const fontId = fontNode.getAttribute('id');
+        const stageNodes = node.querySelectorAll('stages > stage');
+        [...stageNodes].forEach(node => {
+            const avatarId = this.getAttr(node, 'avatar');
+            const captionId = this.getAttr(node, 'caption');
+            const characterId = this.getAttr(node, 'character');
+            const scene = this.getAttr(node, 'scene');
 
-        stageSelect.setIndicator(context.createEntity('indicator').model);
-        stageSelect.setFrame(context.createEntity('frame').model);
-
-        if (spacingNode) {
-            stageSelect.spacing.copy(this.getVector2(spacingNode));
-        }
-        if (cameraNode) {
-            stageSelect.cameraDistance = this.getFloat(cameraNode, 'distance');
-        }
-        if (indicatorNode) {
-            stageSelect.indicatorInterval = this.getFloat(indicatorNode, 'blink-interval');
-        }
-
-        const stagesNode = node.getElementsByTagName('stage');
-        stageSelect.rowLength = Math.ceil(Math.sqrt(stagesNode.length));
-        for (let stageNode, i = 0; stageNode = stagesNode[i++];) {
-            const id = this.getAttr(stageNode, 'id')
-            const name = this.getAttr(stageNode, 'name');
-            const text = this.getAttr(stageNode, 'caption');
-            const caption = this.createCaption(text, fontId);
-            const avatar = context.createEntity(id).model;
-            const characterId = this.getAttr(stageNode, 'character');
-            stageSelect.addStage(avatar, caption, name, characterId && res.get('entity', characterId));
-        }
-
-        const initialIndex = this.getInt(indicatorNode, 'initial-index') || 0;
-        stageSelect.initialIndex = initialIndex;
+            stageSelect.addStage({
+                scene,
+                avatar: context.createEntity(avatarId),
+                frame: context.createEntity('frame'),
+                caption: context.createEntity(captionId),
+                character: characterId
+                    ? this.loader.resourceManager.get('entity', characterId)
+                    : undefined,
+            });
+        });
     }
 
     parseReveal(node, context, stageSelect) {
@@ -94,12 +69,6 @@ class StageSelectParser extends Parser
                 stageSelect.addStar(model, depth);
             }
         }
-
-        const podiumNode = node.querySelector(':scope > layout > podium');
-        if (podiumNode) {
-            const id = this.getAttr(podiumNode, 'object');
-            stageSelect.setPodium(context.createEntity(id).model);
-        }
     }
 
     setupBehavior(node, {scene}, stageSelect) {
@@ -113,7 +82,7 @@ class StageSelectParser extends Parser
         const stageSelectScene = scene;
         scene.events.bind(stageSelect.EVENT_STAGE_ENTER, (stage, index) => {
             try {
-                this.loader.loadSceneByName(stage.name)
+                this.loader.loadSceneByName(stage.scene)
                 .then(scene => {
                     scene.events.bind(scene.EVENT_END, () => {
                         game.setScene(stageSelectScene);
