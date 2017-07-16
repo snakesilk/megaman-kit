@@ -86,12 +86,22 @@ describe('Level', function() {
   });
 
   describe('#resetPlayer()', function() {
+    beforeEach(() => {
+      sinon.stub(level, 'readyBlink').returns(Promise.resolve());
+    });
+
+    it('calls readyBlink', () => {
+      level.addCheckPoint(135, 345, 0);
+      level.resetPlayer();
+      expect(level.readyBlink.callCount).to.be(1);
+    });
+
     it('should run reset on player', function() {
       const character = new Entity;
       character.reset = sinon.spy();
       level.player = { character };
       level.resetPlayer();
-      expect(character.reset.calledOnce).to.be(true);
+      expect(character.reset.callCount).to.be(1);
     });
 
     it('should put player on last checkpoint + offset', function() {
@@ -112,7 +122,6 @@ describe('Level', function() {
 
     it('should activate a teleportation from checkpoint + offset', function(done) {
       level.checkPointOffset.set(0, 200);
-      level.readyBlinkTime = 0;
       level.addCheckPoint(300, 100, 0);
       level.player.character.events.bind(level.player.character.teleport.EVENT_START, () => {
         try {
