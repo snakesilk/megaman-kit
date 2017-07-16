@@ -22,27 +22,27 @@ class GameParser extends Parser
         const itemNodes = find(node, 'items > entities');
         const projectileNodes = find(node, 'projectiles > entities');
 
-        this._parseConfig(node);
+        this.parseConfig(node);
 
         return Promise.all([
-            this._parseAudio(node),
-            this._parseFonts(node),
+            this.parseAudio(node),
+            this.parseFonts(node),
         ])
-        .then(() => this._parseEntities(itemNodes))
+        .then(() => this.parseEntities(itemNodes))
         .then(() => Promise.all([
-            this._parseEntities(characterNodes),
-            this._parseEntities(projectileNodes),
-            this._parseScenes(node),
+            this.parseEntities(characterNodes),
+            this.parseEntities(projectileNodes),
+            this.parseScenes(node),
         ]))
-        .then(() => this._parsePlayer(node, game.player))
-        .then(() => this._parseWeapons(node))
+        .then(() => this.parsePlayer(node, game.player))
+        .then(() => this.parseWeapons(node))
         .then(() => this.loader.loadSceneByName(entrypoint))
         .then(scene => {
             game.setScene(scene);
         });
     }
 
-    _parseAudio(node) {
+    parseAudio(node) {
         const audioNodes = find(node, 'audio > *');
         return Promise.all(audioNodes.map(node => {
             return this.getAudio(node)
@@ -53,7 +53,7 @@ class GameParser extends Parser
         }));
     }
 
-    _parseConfig(node) {
+    parseConfig(node) {
         const configNodes = children(node, 'config');
         configNodes.forEach(node => {
             const textureScale = this.getInt(node, 'texture-scale');
@@ -63,7 +63,7 @@ class GameParser extends Parser
         });
     }
 
-    _parseFonts(node) {
+    parseFonts(node) {
         const fontNodes = find(node, 'fonts > font');
         return Promise.all(fontNodes.map(node => {
             const url = this.resolveURL(node, 'url');
@@ -85,7 +85,7 @@ class GameParser extends Parser
         }));
     }
 
-    _parseEntities(nodes) {
+    parseEntities(nodes) {
         const resource = this.loader.resourceManager;
         return Promise.all(nodes.map(node => {
             return this.loader.followNode(node)
@@ -99,7 +99,7 @@ class GameParser extends Parser
         }));
     }
 
-    _parsePlayer(node, player) {
+    parsePlayer(node, player) {
         const playerNode = children(node, 'player')[0];
         const characterId = playerNode.querySelector('character')
                                       .getAttribute('id');
@@ -114,7 +114,7 @@ class GameParser extends Parser
         player.setCharacter(character);
     }
 
-    _parseScenes(node) {
+    parseScenes(node) {
         const nodes = find(node, 'scenes > scene');
         const index = this.loader.sceneIndex;
         nodes.forEach(node => {
@@ -125,7 +125,7 @@ class GameParser extends Parser
         });
     }
 
-    _parseWeapons(node) {
+    parseWeapons(node) {
         const weaponsNodes = children(node, 'weapons');
         weaponsNodes.forEach(node => {
             const resource = this.loader.resourceManager;
