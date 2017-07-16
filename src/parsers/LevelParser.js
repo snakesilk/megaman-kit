@@ -20,6 +20,7 @@ class LevelParser extends Parser
             this.parseMusic(node, context, level);
             this.parseSpawners(node, context);
             this.parseText(node, level);
+            console.log(level);
 
             return this.loader.resourceLoader.complete()
             .then(() => context);
@@ -81,10 +82,8 @@ class LevelParser extends Parser
     }
 
     parseText(node, level) {
-        const res = this.loader.resourceManager;
-        if (res.has('font', 'nintendo')) {
-            level.assets['start-caption'] = res.get('font', 'nintendo')('READY').createMesh();
-        }
+        const ReadyToast = this.loader.resourceManager.get('entity', 'READY');
+        level.assets['readyToast'] = new ReadyToast();
     }
 }
 

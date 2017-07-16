@@ -190,24 +190,23 @@ class Level
     }
 
     readyBlink() {
-        if (this.readyBlinkTime === 0 || !this.assets['start-caption']) {
+        if (this.readyBlinkTime === 0) {
             return SyncPromise.resolve();
         }
 
-        const model = this.assets['start-caption'];
-        const camera = this.scene.camera.camera;
-        const interval = 9/60;
+        const scene = this.scene;
+        const camera = scene.camera.camera;
 
-        model.visible = true;
-        this.scene.world.scene.add(model);
+        const readyToast = this.assets['readyToast'];
+        readyToast.reset();
 
+        scene.world.addObject(readyToast);
         return this.scene.doFor(this.readyBlinkTime, (elapsed) => {
-            model.position.x = camera.position.x;
-            model.position.y = camera.position.y;
-            model.visible = elapsed % (interval * 2) < interval;
+            readyToast.position.x = camera.position.x;
+            readyToast.position.y = camera.position.y;
         })
         .then(() => {
-            this.scene.world.scene.remove(model);
+            scene.world.removeObject(readyToast);
         });
     }
 
