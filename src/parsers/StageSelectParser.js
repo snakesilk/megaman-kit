@@ -46,9 +46,9 @@ class StageSelectParser extends Parser
         const {scene} = context;
         const res = this.loader.resourceManager;
 
-        const backgroundNode = node.getElementsByTagName('background')[0];
-        const cameraNode = node.getElementsByTagName('camera')[0];
-        const indicatorNode = node.getElementsByTagName('indicator')[0];
+        const backgroundNode = node.querySelector('background');
+        const cameraNode = node.querySelector('camera');
+        const indicatorNode = node.querySelector('indicator');
         const spacingNode = node.querySelector('spacing');
 
         stageSelect.setBackgroundColor(this.getAttr(backgroundNode, 'color'));
