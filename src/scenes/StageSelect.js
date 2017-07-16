@@ -31,10 +31,6 @@ class StageSelect
         this.spacing = new THREE.Vector2(64, 64);
         this.starSpeed = 200;
 
-        this.backgroundColor = new THREE.Mesh(
-            new THREE.PlaneGeometry(500, 500),
-            new THREE.MeshLambertMaterial());
-        this.scene.world.scene.add(this.backgroundColor);
         this.backgroundModel = undefined;
 
         const input = this.scene.input;
@@ -115,8 +111,6 @@ class StageSelect
     }
 
     createFlashAnimation() {
-        const backgroundColor = this.backgroundColor.material.ambient;
-        const defaultBackgroundColor = backgroundColor.clone();
         const light = this.scene.world.ambientLight.color;
         const defaultLight = light.clone();
 
@@ -125,12 +119,10 @@ class StageSelect
         let state = false;
 
         const on = () => {
-            backgroundColor.setRGB(1,1,1);
             light.setRGB(5,5,5);
             state = true;
         };
         const off = () => {
-            backgroundColor.copy(defaultBackgroundColor);
             light.copy(defaultLight);
             state = false;
         };
@@ -230,10 +222,7 @@ class StageSelect
         this.scene.camera.position.z = this.cameraDesiredPosition.z - 100;
 
         this.selectIndex(index);
-        this.backgroundColor.position.copy(center);
-        this.backgroundColor.position.z -= 10;
         this.backgroundModel.position.copy(center);
-        this.backgroundColor.position.z -= 9;
         this.backgroundModel.position.copy(center);
     }
 
@@ -322,10 +311,6 @@ class StageSelect
         }
         this.backgroundModel = model;
         this.scene.world.scene.add(model);
-    }
-
-    setBackgroundColor(hexcolor) {
-        this.backgroundColor.material.ambient.setHex(hexcolor);
     }
 
     setFrame(model) {
