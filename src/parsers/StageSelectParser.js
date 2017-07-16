@@ -43,14 +43,13 @@ class StageSelectParser extends Parser
     }
 
     parseLayout(node, context, stageSelect) {
-        const sceneNode = node;
         const {scene} = context;
         const res = this.loader.resourceManager;
 
-        const backgroundNode = sceneNode.getElementsByTagName('background')[0];
-        const cameraNode = sceneNode.getElementsByTagName('camera')[0];
-        const indicatorNode = sceneNode.getElementsByTagName('indicator')[0];
-        const spacingNode = sceneNode.querySelector('spacing');
+        const backgroundNode = node.getElementsByTagName('background')[0];
+        const cameraNode = node.getElementsByTagName('camera')[0];
+        const indicatorNode = node.getElementsByTagName('indicator')[0];
+        const spacingNode = node.querySelector('spacing');
 
         stageSelect.setBackgroundColor(this.getAttr(backgroundNode, 'color'));
         stageSelect.setBackgroundModel(context.createEntity('background').model);
@@ -67,7 +66,7 @@ class StageSelectParser extends Parser
             stageSelect.indicatorInterval = this.getFloat(indicatorNode, 'blink-interval');
         }
 
-        const stagesNode = sceneNode.getElementsByTagName('stage');
+        const stagesNode = node.getElementsByTagName('stage');
         stageSelect.rowLength = Math.ceil(Math.sqrt(stagesNode.length));
         for (let stageNode, i = 0; stageNode = stagesNode[i++];) {
             const id = this.getAttr(stageNode, 'id')
