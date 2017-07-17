@@ -20,8 +20,6 @@ class LevelParser extends Parser
             this.parseMusic(node, context, level);
             this.parseSpawners(node, context);
             this.parseText(node, level);
-            console.log(level);
-
             return this.loader.resourceLoader.complete()
             .then(() => context);
         });
