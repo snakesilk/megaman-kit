@@ -12,11 +12,8 @@ class Megaman extends Entity
     }
     changeDress(weapon)
     {
-        const textureId = "megaman-" + weapon.code;
-        if (this.textures[textureId]) {
-            this.model.material.map = this.textures[textureId].texture;
-            this.model.material.needsUpdate = true;
-        }
+        const textureId = 'megaman-' + weapon.code;
+        this.useTexture(textureId);
     }
 }
 

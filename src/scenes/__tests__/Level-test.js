@@ -3,7 +3,7 @@ const sinon = require('sinon');
 
 const Mocks = require('@snakesilk/testing/mocks');
 
-const {Game, Entity, Scene} = require('@snakesilk/engine');
+const {Game, Entity, Scene, Trait} = require('@snakesilk/engine');
 const {Health} = require('@snakesilk/platform-traits');
 const {Teleport} = require('@snakesilk/megaman-traits');
 
@@ -72,16 +72,19 @@ describe('Level', function() {
   });
 
   describe('#resetObjects', function() {
-    it('should run reset function on every trait of every object if available', function() {
-      const thing = new Entity();
-      const resetSpy = sinon.spy();
-      thing.traits = [
-        { reset: resetSpy },
-        { dummy: null },
-      ];
-      scene.world.addObject(thing);
+    it('runs reset function on every trait of every object if available', function() {
+      const entity = new Entity();
+      const trait1 = new Trait();
+      trait1.NAMW = 'foo';
+      trait1.reset = sinon.spy();
+      const trait2 = new Trait();
+      trait2.NAME = 'bar';
+      entity.applyTrait(trait1);
+      entity.applyTrait(trait2);
+
+      scene.world.addObject(entity);
       level.resetObjects();
-      expect(resetSpy.callCount).to.be(1);
+      expect(trait1.reset.callCount).to.be(1);
     });
   });
 
