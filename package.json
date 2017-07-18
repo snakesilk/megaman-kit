@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@snakesilk/engine": ">=0.12.0",
-    "@snakesilk/megaman-traits": ">=0.0.3",
-    "@snakesilk/platform-traits": ">=0.1.3",
+    "@snakesilk/megaman-traits": ">=0.0.4",
+    "@snakesilk/platform-traits": ">=0.4.0",
     "@snakesilk/xml-loader": ">=0.10.0",
     "three": "0.70"
   },
