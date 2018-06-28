@@ -162,6 +162,13 @@ describe('Weapon', function() {
       weapon.emit(projectile);
       expect(projectile.emitter).to.be(weapon.user);
     });
+
+    it('sets projectile origin', () => {
+      const projectile = createProjectile();
+      weapon.user.position.set(10.4, 5.5, 2.5);
+      weapon.emit(projectile);
+      expect(projectile.projectile._origin).to.eql({x: 10.4, y: 5.5, z: 2.5});
+    });
   });
 
   describe('#addProjectile', function() {

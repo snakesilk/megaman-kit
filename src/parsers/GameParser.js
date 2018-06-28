@@ -27,16 +27,16 @@ class GameParser extends Parser
         return Promise.all([
             this.parseAudio(node),
             this.parseFonts(node),
-        ])
-        .then(() => this.parseEntities(itemNodes))
-        .then(() => Promise.all([
+            this.parseEntities(itemNodes),
             this.parseEntities(characterNodes),
             this.parseEntities(projectileNodes),
+            this.parsePlayer(node, game.player),
             this.parseScenes(node),
-        ]))
-        .then(() => this.parsePlayer(node, game.player))
-        .then(() => this.parseWeapons(node))
-        .then(() => this.loader.loadSceneByName(entrypoint))
+            this.parseWeapons(node),
+        ])
+        .then(() => {
+            return this.loader.loadSceneByName(entrypoint);
+        })
         .then(scene => {
             game.setScene(scene);
         });
@@ -67,7 +67,7 @@ class GameParser extends Parser
         const fontNodes = find(node, 'fonts > font');
         return Promise.all(fontNodes.map(node => {
             const url = this.resolveURL(node, 'url');
-            const task = this.loader.resourceLoader.loadImage(url)
+            this.loader.resourceLoader.loadImage(url)
             .then(canvas => {
                 const fontId = this.getAttr(node, 'id');
                 const size = this.getVector2(node, 'w', 'h');
@@ -107,11 +107,12 @@ class GameParser extends Parser
         player.defaultWeapon = playerNode.querySelector('weapon')
                                          .getAttribute('default');
 
-        const Character = this.loader.resourceManager.get('entity', characterId);
-        const character = new Character();
-
-        player.retries = this.getInt(playerNode, 'retries') || 3;
-        player.setCharacter(character);
+        return this.loader.resourceManager.get('entity', characterId)
+        .then(Character => {
+            const character = new Character();
+            player.retries = this.getInt(playerNode, 'retries') || 3;
+            player.setCharacter(character);
+        });
     }
 
     parseScenes(node) {
@@ -127,15 +128,16 @@ class GameParser extends Parser
 
     parseWeapons(node) {
         const weaponsNodes = children(node, 'weapons');
-        weaponsNodes.forEach(node => {
-            const resource = this.loader.resourceManager;
-            const weapons = this.weaponParser.parse(node);
-            const player = this.loader.game.player;
-            Object.keys(weapons).forEach((key) => {
-                const weaponInstance = new weapons[key];
-                player.weapons[weaponInstance.code] = weaponInstance;
+        return Promise.all([...weaponsNodes].map(node => {
+            return this.weaponParser.parse(node)
+            .then(weapons => {
+                const player = this.loader.game.player;
+                Object.keys(weapons).forEach((key) => {
+                    const weaponInstance = new weapons[key];
+                    player.weapons[weaponInstance.code] = weaponInstance;
+                });
             });
-        });
+        }));
     }
 }
 

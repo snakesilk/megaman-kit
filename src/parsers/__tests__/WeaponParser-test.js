@@ -34,7 +34,8 @@ describe('WeaponParser', function() {
             beforeEach(() => {
                 parser.loader.resourceManager.addEntity(projectileId, Entity);
                 const node = createNode(xmlString);
-                Weapon = parser.parseWeapon(node);
+                return parser.parseWeapon(node)
+                .then(W => Weapon = W);
             });
 
             it(`produces a ${name} weapon`, () => {
