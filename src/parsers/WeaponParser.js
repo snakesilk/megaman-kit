@@ -36,37 +36,47 @@ class WeaponParser extends Parser
 
         return constructor;
     }
+
     parse(weaponsNode)
     {
         if (weaponsNode.tagName !== 'weapons') {
             throw new TypeError('Node not <weapons>');
         }
 
-        var weaponNodes = weaponsNode.getElementsByTagName('weapon');
-        var weapons = {};
-        for (var weaponNode, i = 0; weaponNode = weaponNodes[i]; ++i) {
-            var weaponId = weaponNode.getAttribute('id');
-            var Weapon = this.parseWeapon(weaponNode);
-            weapons[weaponId] = Weapon;
-        }
-
-        return weapons;
+        const weaponNodes = weaponsNode.getElementsByTagName('weapon');
+        const weapons = {};
+        return Promise.all([...weaponNodes].map(weaponNode => {
+            const weaponId = weaponNode.getAttribute('id');
+            return this.parseWeapon(weaponNode)
+            .then(Weapon => {
+                weapons[weaponId] = Weapon;
+            });
+        }))
+        .then(() => {
+            return weapons;
+        });
     }
+
     parseProjectiles(projectileNodes)
     {
         const projectiles = [];
-        if (projectileNodes) {
-            for (let projectileNode, i = 0; projectileNode = projectileNodes[i]; ++i) {
-                let projectileId = projectileNode.getAttribute('id');
-                let amount = this.getFloat(projectileNode, 'amount') || 1;
-                projectiles.push({
-                    constr: this.loader.resourceManager.get('entity', projectileId),
-                    amount: amount,
-                });
-            }
+        if (!projectileNodes) {
+            return Promise.resolve([]);
         }
-        return projectiles;
+
+        return Promise.all([...projectileNodes].map(projectileNode => {
+            const projectileId = projectileNode.getAttribute('id');
+            const amount = this.getFloat(projectileNode, 'amount') || 1;
+            return this.loader.resourceManager.get('entity', projectileId)
+            .then(constr => {
+                return {
+                    constr,
+                    amount,
+                };
+            });
+        }));
     }
+
     parseWeapon(weaponNode)
     {
         var objectId = weaponNode.getAttribute('id');
@@ -79,23 +89,26 @@ class WeaponParser extends Parser
 
         const weaponId = weaponNode.getAttribute('id');
         const directionNode = weaponNode.getElementsByTagName('directions')[0];
-        var projectileNodes = weaponNode.getElementsByTagName('projectile');
+        const projectileNodes = weaponNode.getElementsByTagName('projectile');
 
-        var blueprint = {
-            id: weaponId,
-            constr: Weapon,
-            ammo: this.getFloat(weaponNode, 'ammo') || null,
-            code: this.getAttr(weaponNode, 'code'),
-            coolDown: this.getFloat(weaponNode, 'cool-down') || 0,
-            cost: this.getFloat(weaponNode, 'cost') || 1,
-            directions: [
-                directionNode && this.getVector2(directionNode, 'x1', 'y1') || new Vector2(-1, 0),
-                directionNode && this.getVector2(directionNode, 'x2', 'y2') || new Vector2(1, 0),
-            ],
-            projectiles: this.parseProjectiles(projectileNodes),
-        };
+        return this.parseProjectiles(projectileNodes)
+        .then(projectiles => {
+            const blueprint = {
+                id: weaponId,
+                constr: Weapon,
+                ammo: this.getFloat(weaponNode, 'ammo') || null,
+                code: this.getAttr(weaponNode, 'code'),
+                coolDown: this.getFloat(weaponNode, 'cool-down') || 0,
+                cost: this.getFloat(weaponNode, 'cost') || 1,
+                directions: [
+                    directionNode && this.getVector2(directionNode, 'x1', 'y1') || new Vector2(-1, 0),
+                    directionNode && this.getVector2(directionNode, 'x2', 'y2') || new Vector2(1, 0),
+                ],
+                projectiles,
+            };
 
-        return this.createConstructor(blueprint);
+            return this.createConstructor(blueprint);
+        });
     }
 }
 

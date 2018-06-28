@@ -62,12 +62,14 @@ class Weapon
         origin.x += weapon.projectileEmitOffset.x * aim.x;
         origin.y += weapon.projectileEmitOffset.y;
         const radius = aim.clone().setLength(weapon.projectileEmitRadius);
-        origin.add(radius);
+        origin.x += radius.x;
+        origin.y += radius.y;
+
         projectile.setOrigin(origin);
 
         object.timeStretch = user.timeStretch;
 
-        var index = this.projectilesIdle.indexOf(object);
+        const index = this.projectilesIdle.indexOf(object);
         if (index !== -1) {
             this.projectilesIdle.splice(index, 1);
             this.projectilesFired.push(object);

@@ -16,11 +16,15 @@ class LevelParser extends Parser
         return this.sceneParser.getScene(sceneNode)
         .then(context => {
             const level = new Level(context.scene);
-            this.parseCheckpoints(node, level);
-            this.parseMusic(node, context, level);
-            this.parseSpawners(node, context);
-            this.parseText(node, level);
-            return this.loader.resourceLoader.complete()
+            return Promise.all([
+                this.parseCheckpoints(node, level),
+                this.parseMusic(node, context, level),
+                this.parseSpawners(node, context),
+                this.parseText(node, level),
+            ])
+            .then(() => {
+                return this.loader.resourceLoader.complete()
+            })
             .then(() => context);
         });
     }
@@ -55,33 +59,38 @@ class LevelParser extends Parser
     parseSpawners(node, {scene}) {
         const world = scene.world;
         const spawnerNodes = find(node, 'layout > spawner');
-        for (let spawnerNode, i = 0; spawnerNode = spawnerNodes[i]; ++i) {
+        return Promise.all(spawnerNodes.map(spawnerNode => {
             const spawner = new Spawner();
             const position = this.getPosition(spawnerNode);
             spawner.position.copy(position);
             spawner.position.z = 0;
 
-            const spawnableNodes = spawnerNode.getElementsByTagName('*');
-            for (let spawnableNode, j = 0; spawnableNode = spawnableNodes[j]; ++j) {
+            const spawnableNodes = [...spawnerNode.children];
+            return Promise.all(spawnableNodes.map(spawnableNode => {
                 const objectId = spawnableNode.getAttribute('id');
-                const objectRef = this.loader.resourceManager.get('entity', objectId);
-                spawner.pool.push(objectRef);
-            }
+                return this.loader.resourceManager.get('entity', objectId);
+            }))
+            .then(objectRefs => {
+                for (const objectRef of objectRefs) {
+                    spawner.pool.push(objectRef);
+                }
 
-            spawner.maxTotalSpawns = this.getFloat(spawnerNode, 'count') || Infinity;
-            spawner.maxSimultaneousSpawns = this.getFloat(spawnerNode, 'simultaneous') || 1;
-            spawner.interval = this.getFloat(spawnerNode, 'interval') || 0;
-            spawner.minDistance = this.getFloat(spawnerNode, 'min-distance') || 64;
-            spawner.maxDistance = this.getFloat(spawnerNode, 'max-distance') || 256;
+                spawner.maxTotalSpawns = this.getFloat(spawnerNode, 'count') || Infinity;
+                spawner.maxSimultaneousSpawns = this.getFloat(spawnerNode, 'simultaneous') || 1;
+                spawner.interval = this.getFloat(spawnerNode, 'interval') || 0;
+                spawner.minDistance = this.getFloat(spawnerNode, 'min-distance') || 64;
+                spawner.maxDistance = this.getFloat(spawnerNode, 'max-distance') || 256;
 
-            world.addObject(spawner);
-        }
-        return Promise.resolve();
+                world.addObject(spawner);
+            });
+        }));
     }
 
     parseText(node, level) {
-        const ReadyToast = this.loader.resourceManager.get('entity', 'READY');
-        level.assets['readyToast'] = new ReadyToast();
+        return this.loader.resourceManager.get('entity', 'READY')
+        .then(ReadyToast => {
+            level.assets['readyToast'] = new ReadyToast();
+        });
     }
 }
 
